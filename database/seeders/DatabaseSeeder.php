@@ -14,7 +14,7 @@ class DatabaseSeeder extends Seeder
         $users = User::factory(5)->create();
 
         // Option A: Create requests attached to random existing users
-        PurchaseRequest::factory(25)
+        PurchaseRequest::factory(500)
             ->recycle($users) // ensures user_id comes from the created users
             ->create();
 
