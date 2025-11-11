@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { dashboard, login, register } from '@/routes';
 import { Head, Link } from '@inertiajs/vue3';
+import welcomeaim from '@/assets/welcomeaim.png';
 
 withDefaults(
     defineProps<{
@@ -57,7 +58,7 @@ withDefaults(
                 <div
                     class="flex-1 rounded-br-lg rounded-bl-lg bg-white p-6 pb-12 text-[13px] leading-[20px] shadow-[inset_0px_0px_0px_1px_rgba(26,26,0,0.16)] lg:rounded-tl-lg lg:rounded-br-none lg:p-20 dark:bg-[#161615] dark:text-[#EDEDEC] dark:shadow-[inset_0px_0px_0px_1px_#fffaed2d]"
                 >
-                    <h1 class="mb-2 text-2xl font-extrabold">Welcome <br> Sistem E-Perolehan</h1>
+                    <h1 class="mb-2 text-2xl font-extrabold">Welcome To <br> Sistem E-Perolehan</h1>
                     <p class="mb-2 text-[#706f6c] dark:text-[#A1A09A]">
                         Sistem E-Perolehan is a web-based procurement system built using Laravel for the backend and Vue.js for the frontend. The main goal of this system is to help organizations manage their purchasing process more efficiently by replacing manual paperwork with a digital solution. <br />
                         We suggest starting with the following.
@@ -66,7 +67,7 @@ withDefaults(
                 <div
                     class="relative -mb-px aspect-335/376 w-full shrink-0 overflow-hidden rounded-t-lg bg-[#ffffe6] lg:mb-0 lg:-ml-px lg:aspect-auto lg:w-[438px] lg:rounded-t-none lg:rounded-r-lg dark:bg-[#1D0002]"
                 >
-
+                    <img :src="welcomeaim" alt="AIM Sistem E-Perolehan" class="absolute inset-0 h-full w-full object-cover" />
                     <div
                         class="absolute inset-0 rounded-t-lg shadow-[inset_0px_0px_0px_1px_rgba(26,26,0,0.16)] lg:overflow-hidden lg:rounded-t-none lg:rounded-r-lg dark:shadow-[inset_0px_0px_0px_1px_#fffaed2d]"
                     />
