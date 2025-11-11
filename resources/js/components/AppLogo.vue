@@ -1,16 +1,13 @@
 <script setup lang="ts">
-import AppLogoIcon from '@/components/AppLogoIcon.vue';
+// Static logo import via Vite. Note: file present as aimlogos.png (single .png).
+import logoUrl from '@/assets/aimlogo.png';
 </script>
 
 <template>
-    <div
-        class="flex aspect-square size-8 items-center justify-center rounded-md bg-sidebar-primary text-sidebar-primary-foreground"
-    >
-        <AppLogoIcon class="size-5 fill-current text-white dark:text-black" />
-    </div>
+  <div class="flex items-center gap-2">
+    <img :src="logoUrl" alt="App Logo" class="h-12 w-12 object-contain" />
     <div class="ml-1 grid flex-1 text-left text-sm">
-        <span class="mb-0.5 truncate leading-tight font-semibold"
-            >Sistem E-perolehan</span
-        >
+      <span class="mb-0.5 truncate leading-tight font-semibold">Sistem E-perolehan</span>
     </div>
+  </div>
 </template>
