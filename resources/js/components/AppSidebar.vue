@@ -23,6 +23,11 @@ const mainNavItems: NavItem[] = [
         href: dashboard(),
         icon: LayoutGrid,
     },
+    {
+        title: 'Purchase Requests',
+        href: '/purchase-requests',
+        icon: Folder,
+    },
 ];
 
 // const footerNavItems: NavItem[] = [
