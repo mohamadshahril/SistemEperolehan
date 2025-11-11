@@ -15,7 +15,7 @@ return new class extends Migration {
             $table->decimal('price', 12, 2);
             $table->text('purpose')->nullable();
             $table->string('status')->default('Pending'); // Pending, Approved, Rejected
-            $table->timestamp('submitted_at')->nullable();
+            $table->datetime('submitted_at')->nullable();
             $table->string('attachment_path')->nullable();
             $table->timestamps();
             $table->index(['status', 'submitted_at']);

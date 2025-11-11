@@ -165,7 +165,7 @@ function destroyRequest(id: number) {
               </td>
               <td class="px-4 py-2">{{ row.quantity }}</td>
               <td class="px-4 py-2">{{ Number(row.price).toLocaleString(undefined, { style: 'currency', currency: 'MYR' }) }}</td>
-              <td class="px-4 py-2">{{ row.submitted_at ? new Date(row.submitted_at).toLocaleDateString() : '-' }}</td>
+              <td class="px-4 py-2">{{ row.submitted_at ? new Date(row.submitted_at).toLocaleDateString('en-GB') : '-' }}</td>
               <td class="px-4 py-2">
                 <span
                   class="inline-flex items-center rounded-full px-2 py-0.5 text-xs"
