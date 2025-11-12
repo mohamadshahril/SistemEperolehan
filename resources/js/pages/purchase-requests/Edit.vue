@@ -73,6 +73,37 @@ onMounted(() => {
   if (typeof window !== 'undefined') {
     const params = new URLSearchParams(window.location.search)
     if (params.get('print') === '1') {
+      // When auto-printing, return to the list after the user closes the print dialog
+      const navigateBack = () => {
+        window.removeEventListener('afterprint', navigateBack)
+        document.removeEventListener('visibilitychange', onVisibilityChange)
+        try {
+          // If this was opened in a separate window/tab (via window.open), try to close it
+          if (window.opener && !window.opener.closed) {
+            window.close()
+            return
+          }
+        } catch {
+          // Ignore cross-origin or browser restrictions
+        }
+        // Otherwise, go back to the index
+        try {
+          router.get('/purchase-requests', {}, { replace: true })
+        } catch {
+          window.location.href = '/purchase-requests'
+        }
+      }
+
+      const onVisibilityChange = () => {
+        // Some browsers may not fire afterprint; use visibility as a fallback
+        if (document.visibilityState === 'visible') {
+          navigateBack()
+        }
+      }
+
+      window.addEventListener('afterprint', navigateBack)
+      document.addEventListener('visibilitychange', onVisibilityChange)
+
       // Delay slightly to allow page to render fully before printing
       withTemporaryTitleForPrint(() => {
         setTimeout(() => window.print(), 200)
