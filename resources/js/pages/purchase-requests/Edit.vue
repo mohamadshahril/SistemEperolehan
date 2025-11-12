@@ -63,12 +63,6 @@ function withTemporaryTitleForPrint(run: () => void) {
   run()
 }
 
-function printRequest() {
-  if (typeof window !== 'undefined' && window.print) {
-    withTemporaryTitleForPrint(() => window.print())
-  }
-}
-
 onMounted(() => {
   if (typeof window !== 'undefined') {
     const params = new URLSearchParams(window.location.search)
