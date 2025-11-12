@@ -217,9 +217,7 @@ function destroyRequest() {
             {{ form.processing || submitting ? 'Saving...' : 'Save Changes' }}
           </button>
           <a href="/purchase-requests" class="text-sm hover:underline">Cancel</a>
-          <span class="mx-2 hidden md:inline">|</span>
-          <button type="button" @click="printRequest" class="text-primary hover:underline">Print</button>
-          <span class="mx-2 hidden md:inline">|</span>
+          <span class="mx-1 hidden md:inline">|</span>
           <button type="button" v-if="props.canEdit" @click="destroyRequest" class="text-red-600 hover:underline">Delete Request</button>
         </div>
       </form>
