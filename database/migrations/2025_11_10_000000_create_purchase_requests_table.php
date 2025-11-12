@@ -20,10 +20,19 @@ return new class extends Migration {
             $table->timestamps();
             $table->index(['status', 'submitted_at']);
         });
+
+        Schema::table('purchase_requests', function (Blueprint $table) {
+            $table->softDeletes();
+        });
+
     }
 
     public function down(): void
     {
+        Schema::table('purchase_requests', function (Blueprint $table) {
+            $table->dropSoftDeletes();
+        });
+
         Schema::dropIfExists('purchase_requests');
     }
 };

@@ -164,8 +164,8 @@ function destroyRequest(id: number) {
                 <div class="text-xs text-muted-foreground">#{{ row.id }}</div>
               </td>
               <td class="px-4 py-2">{{ row.quantity }}</td>
-              <td class="px-4 py-2">{{ Number(row.price).toLocaleString(undefined, { style: 'currency', currency: 'MYR' }) }}</td>
-              <td class="px-4 py-2">{{ row.submitted_at ? new Date(row.submitted_at).toLocaleDateString('en-GB') : '-' }}</td>
+                <td class="px-4 py-2">{{ 'RM' + Number(row.price).toLocaleString('en-MY', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }}</td>
+                <td class="px-4 py-2">{{ row.submitted_at ? new Date(row.submitted_at).toLocaleDateString('en-GB', { timeZone: 'UTC' }) : '-' }}</td>
               <td class="px-4 py-2">
                 <span
                   class="inline-flex items-center rounded-full px-2 py-0.5 text-xs"
@@ -183,11 +183,15 @@ function destroyRequest(id: number) {
                 <span v-else class="text-muted-foreground">-</span>
               </td>
               <td class="px-4 py-2">
-                <template v-if="row.status === 'Pending'">
-                  <a :href="`/purchase-requests/${row.id}/edit`" class="text-primary hover:underline mr-3">Edit</a>
-                  <button @click="destroyRequest(row.id)" class="text-red-600 hover:underline">Delete</button>
-                </template>
-                <span v-else class="text-muted-foreground">—</span>
+                <div class="flex items-center gap-3">
+                  <a :href="`/purchase-requests/${row.id}/edit?print=1`" class="text-primary hover:underline">Print</a>
+                  <template v-if="row.status === 'Pending'">
+                    <span class="text-muted-foreground">|</span>
+                    <a :href="`/purchase-requests/${row.id}/edit`" class="text-primary hover:underline">Edit</a>
+                    <button @click="destroyRequest(row.id)" class="text-red-600 hover:underline">Delete</button>
+                  </template>
+                  <span v-else class="text-muted-foreground">—</span>
+                </div>
               </td>
             </tr>
             <tr v-if="props.requests.data.length === 0">
