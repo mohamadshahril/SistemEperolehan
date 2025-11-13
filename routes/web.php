@@ -6,6 +6,7 @@ use Laravel\Fortify\Features;
 use App\Http\Controllers\PurchaseRequestController;
 use App\Http\Controllers\Web\VendorController;
 use App\Http\Controllers\Web\PurchaseOrderController;
+use App\Http\Controllers\LocationController;
 
 Route::get('/', function () {
     return Inertia::render('Welcome', [
@@ -31,6 +32,9 @@ Route::middleware(['auth','verified'])->group(function () {
 
     // Purchase Orders
     Route::resource('purchase-orders', PurchaseOrderController::class);
+
+    // Locations CRUD
+    Route::resource('locations', LocationController::class);
 });
 
 require __DIR__.'/settings.php';
