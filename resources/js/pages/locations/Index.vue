@@ -48,10 +48,10 @@ function goTo(url: string | null) {
   router.get(url, {}, { preserveState: true, preserveScroll: true })
 }
 
-function destroyLocation(id: number) {
-  if (!confirm('Delete this location?')) return
-  router.delete(`/locations/${id}`, { preserveScroll: true, preserveState: true })
-}
+// function destroyLocation(id: number) {
+//   if (!confirm('Delete this location?')) return
+//   router.delete(`/locations/${id}`, { preserveScroll: true, preserveState: true })
+// }
 </script>
 
 <template>
