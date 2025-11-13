@@ -14,7 +14,13 @@ import {
 import { dashboard } from '@/routes';
 import { type NavItem } from '@/types';
 import { Link } from '@inertiajs/vue3';
-import { BookOpen, Folder, LayoutGrid } from 'lucide-vue-next';
+import {
+    BookOpen,
+    BookPlus,
+    Folder,
+    LayoutGrid,
+    LifeBuoy,
+} from 'lucide-vue-next';
 import AppLogo from './AppLogo.vue';
 
 const mainNavItems: NavItem[] = [
@@ -26,7 +32,12 @@ const mainNavItems: NavItem[] = [
     {
         title: 'Purchase Requests',
         href: '/purchase-requests',
-        icon: Folder,
+        icon: BookPlus,
+    },
+    {
+        title: 'Location',
+        href: '/locations',
+        icon: LifeBuoy,
     },
 ];
 

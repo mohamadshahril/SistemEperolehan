@@ -18,21 +18,14 @@ return new class extends Migration {
             $table->datetime('submitted_at')->nullable();
             $table->string('attachment_path')->nullable();
             $table->timestamps();
-            $table->index(['status', 'submitted_at']);
-        });
-
-        Schema::table('purchase_requests', function (Blueprint $table) {
             $table->softDeletes();
+            $table->index(['status', 'submitted_at']);
         });
 
     }
 
     public function down(): void
     {
-        Schema::table('purchase_requests', function (Blueprint $table) {
-            $table->dropSoftDeletes();
-        });
-
         Schema::dropIfExists('purchase_requests');
     }
 };
