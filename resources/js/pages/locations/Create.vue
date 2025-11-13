@@ -31,19 +31,19 @@ function submit() {
       <form @submit.prevent="submit" class="space-y-6">
         <div>
           <label class="block text-sm font-medium">ISO Code</label>
-          <input v-model="form.location_iso_code" type="text" class="mt-1 block w-full rounded-md border p-2" />
+          <input v-model="form.location_iso_code" type="text" class="mt-1 block w-full rounded-md border p-2" @input="form.location_iso_code = form.location_iso_code.toUpperCase()" />
           <div v-if="form.errors.location_iso_code" class="mt-1 text-sm text-red-600">{{ form.errors.location_iso_code }}</div>
         </div>
 
         <div>
           <label class="block text-sm font-medium">Name</label>
-          <input v-model="form.location_name" type="text" class="mt-1 block w-full rounded-md border p-2" />
+          <input v-model="form.location_name" type="text" class="mt-1 block w-full rounded-md border p-2" @input="form.location_name = form.location_name.toUpperCase()" />
           <div v-if="form.errors.location_name" class="mt-1 text-sm text-red-600">{{ form.errors.location_name }}</div>
         </div>
 
         <div>
           <label class="block text-sm font-medium">Parent ISO Code (optional)</label>
-          <input v-model="form.parent_iso_code" type="text" class="mt-1 block w-full rounded-md border p-2" />
+          <input v-model="form.parent_iso_code" type="text" class="mt-1 block w-full rounded-md border p-2" @input="form.parent_iso_code = form.parent_iso_code.toUpperCase()" />
           <div v-if="form.errors.parent_iso_code" class="mt-1 text-sm text-red-600">{{ form.errors.parent_iso_code }}</div>
         </div>
 

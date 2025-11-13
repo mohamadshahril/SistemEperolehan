@@ -61,7 +61,7 @@ function destroyLocation() {
             {{ form.processing || submitting ? 'Saving...' : 'Save Changes' }}
           </button>
           <a href="/locations" class="text-sm hover:underline">Cancel</a>
-          <button type="button" @click="destroyLocation" class="ml-auto rounded-md bg-red-600 px-4 py-2 text-white">Delete</button>
+<!--          <button type="button" @click="destroyLocation" class="ml-auto rounded-md bg-red-600 px-4 py-2 text-white">Delete</button>-->
         </div>
       </form>
     </div>

@@ -20,6 +20,7 @@ import {
     Folder,
     LayoutGrid,
     LifeBuoy,
+    MapPinCheck,
 } from 'lucide-vue-next';
 import AppLogo from './AppLogo.vue';
 
@@ -37,7 +38,7 @@ const mainNavItems: NavItem[] = [
     {
         title: 'Location',
         href: '/locations',
-        icon: LifeBuoy,
+        icon: MapPinCheck,
     },
 ];
 

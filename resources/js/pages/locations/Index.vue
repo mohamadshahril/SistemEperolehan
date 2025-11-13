@@ -48,10 +48,10 @@ function goTo(url: string | null) {
   router.get(url, {}, { preserveState: true, preserveScroll: true })
 }
 
-function destroyLocation(id: number) {
-  if (!confirm('Delete this location?')) return
-  router.delete(`/locations/${id}`, { preserveScroll: true, preserveState: true })
-}
+// function destroyLocation(id: number) {
+//   if (!confirm('Delete this location?')) return
+//   router.delete(`/locations/${id}`, { preserveScroll: true, preserveState: true })
+// }
 </script>
 
 <template>
@@ -93,7 +93,7 @@ function destroyLocation(id: number) {
             <tr>
               <th class="px-3 py-2 text-left"><button @click="sortBy('location_iso_code')">ISO Code</button></th>
               <th class="px-3 py-2 text-left"><button @click="sortBy('location_name')">Name</button></th>
-              <th class="px-3 py-2 text-left"><button @click="sortBy('parent_iso_code')">Parent</button></th>
+              <th class="px-3 py-2 text-left"><button @click="sortBy('parent_iso_code')">Parent Code</button></th>
               <th class="px-3 py-2 text-right">Actions</th>
             </tr>
           </thead>
@@ -104,7 +104,7 @@ function destroyLocation(id: number) {
               <td class="px-3 py-2 font-mono">{{ loc.parent_iso_code || '-' }}</td>
               <td class="px-3 py-2 text-right">
                 <a :href="`/locations/${loc.id}/edit`" class="text-primary hover:underline">Edit</a>
-                <button class="ml-3 text-red-600 hover:underline" @click="destroyLocation(loc.id)">Delete</button>
+<!--                <button class="ml-3 text-red-600 hover:underline" @click="destroyLocation(loc.id)">Delete</button>-->
               </td>
             </tr>
             <tr v-if="props.locations.data.length === 0">
