@@ -4,6 +4,7 @@ use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 use Laravel\Fortify\Features;
 use App\Http\Controllers\PurchaseRequestController;
+use App\Http\Controllers\LocationController;
 
 Route::get('/', function () {
     return Inertia::render('Welcome', [
@@ -22,6 +23,9 @@ Route::middleware(['auth','verified'])->group(function () {
     Route::get('purchase-requests/{purchaseRequest}/edit', [PurchaseRequestController::class, 'edit'])->name('purchase-requests.edit');
     Route::put('purchase-requests/{purchaseRequest}', [PurchaseRequestController::class, 'update'])->name('purchase-requests.update');
     Route::delete('purchase-requests/{purchaseRequest}', [PurchaseRequestController::class, 'destroy'])->name('purchase-requests.destroy');
+
+    // Locations CRUD
+    Route::resource('locations', LocationController::class);
 });
 
 require __DIR__.'/settings.php';
