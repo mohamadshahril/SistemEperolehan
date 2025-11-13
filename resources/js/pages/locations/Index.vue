@@ -74,14 +74,6 @@ function goTo(url: string | null) {
             class="mt-1 block w-full rounded-md border p-2"
           />
         </div>
-        <div>
-          <label class="block text-sm font-medium">Per page</label>
-          <select v-model.number="state.per_page" @change="applyFilters({ page: 1 })" class="mt-1 block w-full rounded-md border p-2">
-            <option :value="10">10</option>
-            <option :value="25">25</option>
-            <option :value="50">50</option>
-          </select>
-        </div>
         <div class="flex items-end">
           <button class="rounded-md border px-3 py-2" @click="applyFilters({ page: 1 })">Apply</button>
         </div>
@@ -124,7 +116,16 @@ function goTo(url: string | null) {
           :class="{ 'bg-primary text-white': l.active }"
           v-html="l.label"
         />
+          <div class="ml-auto flex items-center gap-2">
+              <label class="text-sm">Per page:</label>
+              <select v-model.number="state.per_page" @change="applyFilters({ page: 1 })" class="rounded-md border p-1">
+                  <option :value="10">10</option>
+                  <option :value="25">25</option>
+                  <option :value="50">50</option>
+              </select>
+          </div>
       </div>
+
     </div>
   </AppLayout>
 

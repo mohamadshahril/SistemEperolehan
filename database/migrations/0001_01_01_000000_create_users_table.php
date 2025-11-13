@@ -18,6 +18,7 @@ return new class extends Migration
             $table->timestamp('email_verified_at')->nullable();
             $table->string('password');
             $table->rememberToken();
+            $table->timestamps();
             $table->softDeletes();
 
         });
@@ -36,14 +37,14 @@ return new class extends Migration
             $table->text('user_agent')->nullable();
             $table->longText('payload');
             $table->integer('last_activity')->index();
+            $table->timestamps();
             $table->softDeletes();
         });
 
-        Schema::create('user_location', function (Blueprint $table) {
+        Schema::create('user_locations', function (Blueprint $table) {
             $table->id();
-            $table->string('staff_id');
-            $table->string('location_iso_code');
-            $table->index(['staff_id','location_iso_code']);
+            $table->string('staff_id')->nullable()->index();
+            $table->string('location_iso_code')->nullable()->index();
             $table->timestamps();
             $table->softDeletes();
         });
@@ -57,6 +58,6 @@ return new class extends Migration
         Schema::dropIfExists('users');
         Schema::dropIfExists('password_reset_tokens');
         Schema::dropIfExists('sessions');
-        Schema::dropIfExists('user_location');
+       Schema::dropIfExists('user_location');
     }
 };

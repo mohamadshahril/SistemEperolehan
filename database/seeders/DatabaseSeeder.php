@@ -10,10 +10,22 @@ class DatabaseSeeder extends Seeder
 {
     public function run(): void
     {
-        // Ensure we have some users
+        // 1) Users (needed by purchase requests and user_locations)
         $users = User::factory(5)->create();
 
-        // Option A: Create requests attached to random existing users
+        // 2) Reference data
+        $this->call([
+            LocationsSeeder::class,
+            VendorsSeeder::class,
+        ]);
+
+        // 3) Business data depending on reference data
+        $this->call([
+            PurchaseOrdersSeeder::class, // depends on vendors
+            UserLocationsSeeder::class,  // depends on users + locations
+        ]);
+
+        // 4) Example: purchase requests linked to the created users
         PurchaseRequest::factory(500)
             ->recycle($users) // ensures user_id comes from the created users
             ->create();
