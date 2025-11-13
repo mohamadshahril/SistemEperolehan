@@ -4,6 +4,8 @@ use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 use Laravel\Fortify\Features;
 use App\Http\Controllers\PurchaseRequestController;
+use App\Http\Controllers\Web\VendorController;
+use App\Http\Controllers\Web\PurchaseOrderController;
 
 Route::get('/', function () {
     return Inertia::render('Welcome', [
@@ -16,12 +18,19 @@ Route::get('dashboard', function () {
 })->middleware(['auth', 'verified'])->name('dashboard');
 
 Route::middleware(['auth','verified'])->group(function () {
+    // Purchase Requests
     Route::get('purchase-requests', [PurchaseRequestController::class, 'index'])->name('purchase-requests.index');
     Route::get('purchase-requests/create', [PurchaseRequestController::class, 'create'])->name('purchase-requests.create');
     Route::post('purchase-requests', [PurchaseRequestController::class, 'store'])->name('purchase-requests.store');
     Route::get('purchase-requests/{purchaseRequest}/edit', [PurchaseRequestController::class, 'edit'])->name('purchase-requests.edit');
     Route::put('purchase-requests/{purchaseRequest}', [PurchaseRequestController::class, 'update'])->name('purchase-requests.update');
     Route::delete('purchase-requests/{purchaseRequest}', [PurchaseRequestController::class, 'destroy'])->name('purchase-requests.destroy');
+
+    // Vendors
+    Route::resource('vendors', VendorController::class);
+
+    // Purchase Orders
+    Route::resource('purchase-orders', PurchaseOrderController::class);
 });
 
 require __DIR__.'/settings.php';
