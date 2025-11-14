@@ -20,10 +20,14 @@ class PurchaseRequest extends Model
         'status',
         'submitted_at',
         'attachment_path',
+        'approval_comment',
+        'approved_by',
+        'approved_at',
     ];
 
     protected $casts = [
         'submitted_at' => 'datetime',
+        'approved_at' => 'datetime',
         'price' => 'decimal:2',
     ];
 
