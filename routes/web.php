@@ -38,6 +38,7 @@ Route::middleware(['auth','verified'])->group(function () {
 
     // Approvals Module (Managers)
     Route::get('approvals', [PurchaseRequestController::class, 'approvalsIndex'])->name('approvals.index');
+    Route::get('approvals/{purchaseRequest}', [PurchaseRequestController::class, 'approvalsShow'])->name('approvals.show');
     Route::post('approvals/{purchaseRequest}/approve', [PurchaseRequestController::class, 'approve'])->name('approvals.approve');
     Route::post('approvals/{purchaseRequest}/reject', [PurchaseRequestController::class, 'reject'])->name('approvals.reject');
 });

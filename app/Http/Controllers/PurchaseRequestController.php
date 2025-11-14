@@ -88,13 +88,22 @@ class PurchaseRequestController extends Controller
             'employee' => ['nullable', 'string'], // legacy support
             'from_date' => ['nullable', 'date'],
             'to_date' => ['nullable', 'date', 'after_or_equal:from_date'],
+            'status' => ['nullable', 'string'],
+            'sort_by' => ['nullable', Rule::in(['id', 'item_name', 'quantity', 'price', 'submitted_at', 'status'])],
+            'sort_dir' => ['nullable', Rule::in(['asc', 'desc'])],
             'page' => ['nullable', 'integer', 'min:1'],
             'per_page' => ['nullable', 'integer', 'min:1', 'max:100'],
         ]);
 
         $query = PurchaseRequest::query()
-            ->with(['user:id,name,email'])
-            ->where('status', 'Pending');
+            ->with(['user:id,name,email']);
+
+        // Status filter (default to Pending for backward compatibility)
+        $statusParam = $request->string('status')->toString();
+        $effectiveStatus = $statusParam !== '' ? $statusParam : 'Pending';
+        if ($effectiveStatus !== '' && strtolower($effectiveStatus) !== 'all') {
+            $query->where('status', $effectiveStatus);
+        }
 
         // Unified search across ref id, employee (name/email), item, status, and date
         if ($search = $request->string('search')->toString()) {
@@ -135,8 +144,15 @@ class PurchaseRequestController extends Controller
             $query->whereDate('submitted_at', '<=', $to);
         }
 
+        // Sorting (defaults)
+        $sortBy = $request->input('sort_by', 'submitted_at');
+        $sortDir = $request->input('sort_dir', 'desc');
+
         $perPage = (int) $request->input('per_page', 10);
-        $requests = $query->orderBy('submitted_at', 'desc')->paginate($perPage)->withQueryString();
+        $requests = $query
+            ->orderBy($sortBy, $sortDir)
+            ->paginate($perPage)
+            ->withQueryString();
 
         return Inertia::render('approvals/Index', [
             'requests' => $requests,
@@ -145,8 +161,25 @@ class PurchaseRequestController extends Controller
                 'employee' => $request->input('employee'),
                 'from_date' => $request->input('from_date'),
                 'to_date' => $request->input('to_date'),
+                'status' => $effectiveStatus,
+                'sort_by' => $sortBy,
+                'sort_dir' => $sortDir,
                 'per_page' => $perPage,
             ],
+            'statuses' => ['All', 'Pending', 'Approved', 'Rejected'],
+        ]);
+    }
+
+    /**
+     * Manager: View a single purchase request by ref id
+     */
+    public function approvalsShow(PurchaseRequest $purchaseRequest)
+    {
+        // Eager load minimal relations for display
+        $purchaseRequest->load(['user:id,name,email']);
+
+        return Inertia::render('approvals/Show', [
+            'request' => $purchaseRequest,
         ]);
     }
 
