@@ -11,6 +11,9 @@ use Inertia\Inertia;
 
 class PurchaseRequestController extends Controller
 {
+    /**
+     * Employee: My Purchase Requests listing
+     */
     public function index(Request $request)
     {
         $user = $request->user();
@@ -73,6 +76,122 @@ class PurchaseRequestController extends Controller
             ],
             'statuses' => ['Pending', 'Approved', 'Rejected'],
         ]);
+    }
+
+    /**
+     * Manager: View all pending purchase requests with filters
+     */
+    public function approvalsIndex(Request $request)
+    {
+        $validated = $request->validate([
+            'search' => ['nullable', 'string'],
+            'employee' => ['nullable', 'string'], // legacy support
+            'from_date' => ['nullable', 'date'],
+            'to_date' => ['nullable', 'date', 'after_or_equal:from_date'],
+            'page' => ['nullable', 'integer', 'min:1'],
+            'per_page' => ['nullable', 'integer', 'min:1', 'max:100'],
+        ]);
+
+        $query = PurchaseRequest::query()
+            ->with(['user:id,name,email'])
+            ->where('status', 'Pending');
+
+        // Unified search across ref id, employee (name/email), item, status, and date
+        if ($search = $request->string('search')->toString()) {
+            $normalized = trim($search);
+            // If starts with # treat as ID
+            $idCandidate = ltrim($normalized, '#');
+            $query->where(function ($q) use ($normalized, $idCandidate) {
+                // Ref ID exact match
+                if (ctype_digit($idCandidate)) {
+                    $q->orWhere('id', (int) $idCandidate);
+                }
+                // Item name
+                $q->orWhere('item_name', 'like', "%{$normalized}%");
+                // Status (even though this view is Pending, allow matching text)
+                $q->orWhere('status', 'like', "%{$normalized}%");
+                // Date (submitted_at) exact date match if looks like date
+                // Allow formats like YYYY-MM-DD
+                if (preg_match('/^\d{4}-\d{2}-\d{2}$/', $normalized)) {
+                    $q->orWhereDate('submitted_at', $normalized);
+                }
+                // Employee name/email
+                $q->orWhereHas('user', function ($uq) use ($normalized) {
+                    $uq->where('name', 'like', "%{$normalized}%")
+                       ->orWhere('email', 'like', "%{$normalized}%");
+                });
+            });
+        } elseif ($employee = $request->string('employee')->toString()) { // legacy param
+            $query->whereHas('user', function ($q) use ($employee) {
+                $q->where('name', 'like', "%{$employee}%")
+                  ->orWhere('email', 'like', "%{$employee}%");
+            });
+        }
+
+        if ($from = $request->date('from_date')) {
+            $query->whereDate('submitted_at', '>=', $from);
+        }
+        if ($to = $request->date('to_date')) {
+            $query->whereDate('submitted_at', '<=', $to);
+        }
+
+        $perPage = (int) $request->input('per_page', 10);
+        $requests = $query->orderBy('submitted_at', 'desc')->paginate($perPage)->withQueryString();
+
+        return Inertia::render('approvals/Index', [
+            'requests' => $requests,
+            'filters' => [
+                'search' => $request->input('search'),
+                'employee' => $request->input('employee'),
+                'from_date' => $request->input('from_date'),
+                'to_date' => $request->input('to_date'),
+                'per_page' => $perPage,
+            ],
+        ]);
+    }
+
+    /**
+     * Manager: Approve a pending purchase request with optional comment
+     */
+    public function approve(Request $request, PurchaseRequest $purchaseRequest)
+    {
+        if ($purchaseRequest->status !== 'Pending') {
+            return back()->with('error', 'Only pending requests can be approved.');
+        }
+
+        $data = $request->validate([
+            'comment' => ['nullable', 'string', 'max:1000'],
+        ]);
+
+        $purchaseRequest->status = 'Approved';
+        $purchaseRequest->approval_comment = $data['comment'] ?? null;
+        $purchaseRequest->approved_by = $request->user()->id;
+        $purchaseRequest->approved_at = now();
+        $purchaseRequest->save();
+
+        return back()->with('success', 'Purchase request approved.');
+    }
+
+    /**
+     * Manager: Reject a pending purchase request with optional comment
+     */
+    public function reject(Request $request, PurchaseRequest $purchaseRequest)
+    {
+        if ($purchaseRequest->status !== 'Pending') {
+            return back()->with('error', 'Only pending requests can be rejected.');
+        }
+
+        $data = $request->validate([
+            'comment' => ['nullable', 'string', 'max:1000'],
+        ]);
+
+        $purchaseRequest->status = 'Rejected';
+        $purchaseRequest->approval_comment = $data['comment'] ?? null;
+        $purchaseRequest->approved_by = $request->user()->id;
+        $purchaseRequest->approved_at = now();
+        $purchaseRequest->save();
+
+        return back()->with('success', 'Purchase request rejected.');
     }
 
     public function create()

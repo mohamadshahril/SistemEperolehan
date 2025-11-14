@@ -14,7 +14,7 @@ import {
 import { dashboard } from '@/routes';
 import { type NavItem } from '@/types';
 import { Link } from '@inertiajs/vue3';
-import { BookOpen, BookPlus, Folder, LayoutGrid, LifeBuoy, MapPinCheck, Users, ShoppingCart } from 'lucide-vue-next';
+import { BookPlus, LayoutGrid, MapPinCheck, Users, ShoppingCart, CheckSquare } from 'lucide-vue-next';
 import AppLogo from './AppLogo.vue';
 
 const mainNavItems: NavItem[] = [
@@ -27,6 +27,11 @@ const mainNavItems: NavItem[] = [
         title: 'Purchase Requests',
         href: '/purchase-requests',
         icon: BookPlus,
+    },
+    {
+        title: 'Approvals',
+        href: '/approvals',
+        icon: CheckSquare,
     },
     {
         title: 'Location',
