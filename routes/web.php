@@ -4,6 +4,7 @@ use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 use Laravel\Fortify\Features;
 use App\Http\Controllers\PurchaseRequestController;
+use App\Http\Controllers\PurchaseOrderController;
 
 Route::get('/', function () {
     return Inertia::render('Welcome', [
@@ -15,13 +16,22 @@ Route::get('dashboard', function () {
     return Inertia::render('Dashboard');
 })->middleware(['auth', 'verified'])->name('dashboard');
 
-Route::middleware(['auth','verified'])->group(function () {
+// 🔒 Protected routes
+Route::middleware(['auth', 'verified'])->group(function () {
+
+    // Purchase Requests
     Route::get('purchase-requests', [PurchaseRequestController::class, 'index'])->name('purchase-requests.index');
     Route::get('purchase-requests/create', [PurchaseRequestController::class, 'create'])->name('purchase-requests.create');
     Route::post('purchase-requests', [PurchaseRequestController::class, 'store'])->name('purchase-requests.store');
     Route::get('purchase-requests/{purchaseRequest}/edit', [PurchaseRequestController::class, 'edit'])->name('purchase-requests.edit');
     Route::put('purchase-requests/{purchaseRequest}', [PurchaseRequestController::class, 'update'])->name('purchase-requests.update');
     Route::delete('purchase-requests/{purchaseRequest}', [PurchaseRequestController::class, 'destroy'])->name('purchase-requests.destroy');
+
+    // Purchase Orders
+    Route::resource('purchase-orders', PurchaseOrderController::class);
+    Route::get('purchase-orders/{purchase_order}/download', [PurchaseOrderController::class, 'downloadPdf'])
+        ->name('purchase-orders.download');
 });
 
-require __DIR__.'/settings.php';
+// ✅ make sure the group above is closed before including other route files
+require __DIR__ . '/settings.php';
