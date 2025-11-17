@@ -24,15 +24,30 @@ class PurchaseRequestFactory extends Factory
             : $this->faker->dateTimeBetween('-30 days', 'now');
 
         return [
-            'user_id' => User::factory(), // or set explicitly in seeder if you prefer existing users
-            'item_name' => $this->faker->words(nb: 3, asText: true),
-            'quantity' => $this->faker->numberBetween(1, 100),
-            'price' => $this->faker->randomFloat(2, 10, 5000), // matches decimal(12,2)
+            'user_id' => User::factory(),
+            // Header fields (new schema)
+            'title' => $this->faker->sentence(3),
+            'type_procurement_id' => 1,
+            'file_reference_id' => 1,
+            'vot_id' => 1,
+            'location_iso_code' => $this->faker->countryCode(),
+            'budget' => $this->faker->randomFloat(2, 100, 10000),
             'purpose' => $this->faker->optional()->sentence(12),
+            // Items JSON payload
+            'items' => [
+                [
+                    'item_no' => 1,
+                    'details' => $this->faker->words(4, true),
+                    'purpose' => $this->faker->optional()->sentence(6),
+                    'quantity' => $this->faker->numberBetween(1, 10),
+                    'price' => $this->faker->randomFloat(2, 10, 500),
+                ],
+            ],
             'status' => $status,
             'submitted_at' => $submittedAt,
             'attachment_path' => $this->faker->optional(0.3)->filePath(),
-            // do NOT set deleted_at; soft deletes added via migration will default to NULL
+            'purchase_code' => null,
+            // soft deletes handled by model/migration defaults
         ];
     }
 }

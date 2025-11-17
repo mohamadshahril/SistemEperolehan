@@ -17,6 +17,8 @@ return new class extends Migration
             $table->string('email')->unique();
             $table->timestamp('email_verified_at')->nullable();
             $table->string('password');
+            $table->string('staffid')->nullable()->index();
+            $table->string('location_iso_code')->nullable()->index();
             $table->rememberToken();
             $table->timestamps();
             $table->softDeletes();
@@ -58,6 +60,7 @@ return new class extends Migration
         Schema::dropIfExists('users');
         Schema::dropIfExists('password_reset_tokens');
         Schema::dropIfExists('sessions');
-       Schema::dropIfExists('user_location');
+        // Fix table name to match the one created in up()
+        Schema::dropIfExists('user_locations');
     }
 };

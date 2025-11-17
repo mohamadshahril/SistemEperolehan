@@ -10,8 +10,11 @@ return new class extends Migration {
         Schema::create('locations', function (Blueprint $table) {
             $table->id();
             $table->string('location_iso_code')->unique();
-            $table->string('location_name', 100)->unique();;
+            $table->string('location_name', 100)->unique();
             $table->string('parent_iso_code');
+            $table->tinyInteger('status')
+                ->default(1)
+                ->comment('1 = active, 2 = inactive');
             $table->timestamps();
             $table->softDeletes();
             $table->index('parent_iso_code');
