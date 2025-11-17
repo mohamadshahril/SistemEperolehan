@@ -66,6 +66,11 @@ const mainNavItems: NavItem[] = [
         href: '/vots',
         icon: Settings,
     },
+    {
+        title: 'Type Procurements',
+        href: '/type-procurements',
+        icon: Settings,
+    },
 ];
 </script>
 

@@ -18,6 +18,7 @@ class DatabaseSeeder extends Seeder
             LocationsSeeder::class,
             VotsSeeder::class,
             FileReferencesSeeder::class,
+            TypeProcurementsSeeder::class,
             VendorsSeeder::class,
         ]);
 
