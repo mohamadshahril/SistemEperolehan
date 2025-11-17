@@ -14,7 +14,15 @@ import {
 import { dashboard } from '@/routes';
 import { type NavItem } from '@/types';
 import { Link } from '@inertiajs/vue3';
-import { BookPlus, LayoutGrid, MapPinCheck, Users, ShoppingCart, CheckSquare } from 'lucide-vue-next';
+import {
+    BookPlus,
+    LayoutGrid,
+    MapPinCheck,
+    Users,
+    ShoppingCart,
+    CheckSquare,
+    Settings,
+} from 'lucide-vue-next';
 import AppLogo from './AppLogo.vue';
 
 const mainNavItems: NavItem[] = [
@@ -34,7 +42,7 @@ const mainNavItems: NavItem[] = [
         icon: CheckSquare,
     },
     {
-        title: 'Location',
+        title: 'Locations',
         href: '/locations',
         icon: MapPinCheck,
     },
@@ -48,8 +56,22 @@ const mainNavItems: NavItem[] = [
         href: '/purchase-orders',
         icon: ShoppingCart,
     },
+    {
+        title: 'File References',
+        href: '/file-references',
+        icon: Settings,
+    },
+    {
+        title: 'Vots',
+        href: '/vots',
+        icon: Settings,
+    },
+    {
+        title: 'Type Procurements',
+        href: '/type-procurements',
+        icon: Settings,
+    },
 ];
-
 </script>
 
 <template>

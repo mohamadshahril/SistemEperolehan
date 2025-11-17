@@ -4,8 +4,8 @@ import { Head, router } from '@inertiajs/vue3'
 import { reactive } from 'vue'
 
 const props = defineProps<{
-  locations: {
-    data: Array<{ id: number; location_iso_code: string; location_name: string; parent_iso_code: string | null; status?: number }>
+  typeProcurements: {
+    data: Array<{ id: number; procurement_code: number; procurement_description: string; status: number }>
     links: Array<{ url: string | null; label: string; active: boolean }>
   }
   filters: {
@@ -15,7 +15,7 @@ const props = defineProps<{
     sort_dir?: 'asc' | 'desc' | null
     per_page?: number | null
   }
-  statuses?: Array<{ value: number; label: string }>
+  statuses: Array<{ value: number; label: string }>
 }>()
 
 const state = reactive({
@@ -27,7 +27,7 @@ const state = reactive({
 })
 
 function applyFilters(extra: Record<string, unknown> = {}) {
-  router.get('/locations', {
+  router.get('/type-procurements', {
     search: state.search || undefined,
     status: state.status || undefined,
     sort_by: state.sort_by || undefined,
@@ -52,28 +52,28 @@ function goTo(url: string | null) {
   router.get(url, {}, { preserveState: true, preserveScroll: true })
 }
 
-// function destroyLocation(id: number) {
-//   if (!confirm('Delete this location?')) return
-//   router.delete(`/locations/${id}`, { preserveScroll: true, preserveState: true })
-// }
+function destroyItem(id: number) {
+  if (!confirm('Delete this type procurement?')) return
+  router.delete(`/type-procurements/${id}`, { preserveScroll: true, preserveState: true })
+}
 </script>
 
 <template>
-  <Head title="Locations" />
-  <AppLayout :breadcrumbs="[{ title: 'Locations', href: '/locations' }]">
+  <Head title="Type Procurements" />
+  <AppLayout :breadcrumbs="[{ title: 'Type Procurements', href: '/type-procurements' }]">
     <div class="p-4">
       <div class="mb-4 flex items-center justify-between gap-3">
-        <h1 class="text-2xl font-semibold">Locations</h1>
-        <a href="/locations/create" class="rounded-md bg-primary px-3 py-2 text-white">New Location</a>
+        <h1 class="text-2xl font-semibold">Type Procurements</h1>
+        <a href="/type-procurements/create" class="rounded-md bg-primary px-3 py-2 text-white">New Type</a>
       </div>
 
-      <div class="mb-4 grid grid-cols-1 gap-3 md:grid-cols-4">
+      <div class="mb-4 grid grid-cols-1 gap-3 md:grid-cols-5">
         <div class="md:col-span-2">
           <label class="block text-sm font-medium">Search</label>
           <input
             v-model="state.search"
             type="text"
-            placeholder="ISO code, name, or parent code"
+            placeholder="Code or description"
             @keyup.enter="applyFilters({ page: 1 })"
             class="mt-1 block w-full rounded-md border p-2"
           />
@@ -82,7 +82,7 @@ function goTo(url: string | null) {
           <label class="block text-sm font-medium">Status</label>
           <select v-model="state.status" class="mt-1 block w-full rounded-md border p-2">
             <option value="">All</option>
-            <option v-for="s in (props.statuses || [{ value: 1, label: 'Active' }, { value: 2, label: 'Inactive' }])" :key="s.value" :value="String(s.value)">{{ s.label }}</option>
+            <option v-for="s in props.statuses" :key="s.value" :value="String(s.value)">{{ s.label }}</option>
           </select>
         </div>
         <div class="flex items-end">
@@ -94,28 +94,26 @@ function goTo(url: string | null) {
         <table class="min-w-full divide-y">
           <thead>
             <tr>
-              <th class="px-3 py-2 text-left"><button @click="sortBy('location_iso_code')">ISO Code</button></th>
-              <th class="px-3 py-2 text-left"><button @click="sortBy('location_name')">Name</button></th>
-              <th class="px-3 py-2 text-left"><button @click="sortBy('parent_iso_code')">Parent Code</button></th>
+              <th class="px-3 py-2 text-left"><button @click="sortBy('procurement_code')">Code</button></th>
+              <th class="px-3 py-2 text-left"><button @click="sortBy('procurement_description')">Description</button></th>
               <th class="px-3 py-2 text-left"><button @click="sortBy('status')">Status</button></th>
               <th class="px-3 py-2 text-right">Actions</th>
             </tr>
           </thead>
           <tbody>
-            <tr v-for="loc in props.locations.data" :key="loc.id" class="border-b">
-              <td class="px-3 py-2 font-mono">{{ loc.location_iso_code }}</td>
-              <td class="px-3 py-2">{{ loc.location_name }}</td>
-              <td class="px-3 py-2 font-mono">{{ loc.parent_iso_code || '-' }}</td>
+            <tr v-for="row in props.typeProcurements.data" :key="row.id" class="border-b">
+              <td class="px-3 py-2 font-mono">{{ row.procurement_code }}</td>
+              <td class="px-3 py-2">{{ row.procurement_description }}</td>
               <td class="px-3 py-2">
-                <span :class="(loc.status ?? 1) === 1 ? 'text-green-700' : 'text-gray-500'">{{ (loc.status ?? 1) === 1 ? 'Active' : 'Inactive' }}</span>
+                <span :class="row.status === 1 ? 'text-green-700' : 'text-gray-500'">{{ row.status === 1 ? 'Active' : 'Inactive' }}</span>
               </td>
               <td class="px-3 py-2 text-right">
-                <a :href="`/locations/${loc.id}/edit`" class="text-primary hover:underline">Edit</a>
-  <!--                <button class="ml-3 text-red-600 hover:underline" @click="destroyLocation(loc.id)">Delete</button>-->
+                <a :href="`/type-procurements/${row.id}/edit`" class="text-primary hover:underline">Edit</a>
+                <button class="ml-3 text-red-600 hover:underline" @click="destroyItem(row.id)">Delete</button>
               </td>
             </tr>
-            <tr v-if="props.locations.data.length === 0">
-              <td colspan="5" class="px-3 py-6 text-center text-sm text-muted-foreground">No locations found.</td>
+            <tr v-if="props.typeProcurements.data.length === 0">
+              <td colspan="4" class="px-3 py-6 text-center text-sm text-muted-foreground">No type procurements found.</td>
             </tr>
           </tbody>
         </table>
@@ -123,7 +121,7 @@ function goTo(url: string | null) {
 
       <div class="mt-4 flex flex-wrap items-center gap-2">
         <button
-          v-for="l in props.locations.links"
+          v-for="l in props.typeProcurements.links"
           :key="l.label + (l.url || '')"
           :disabled="!l.url"
           @click="goTo(l.url)"
@@ -131,17 +129,15 @@ function goTo(url: string | null) {
           :class="{ 'bg-primary text-white': l.active }"
           v-html="l.label"
         />
-          <div class="ml-auto flex items-center gap-2">
-              <label class="text-sm">Per page:</label>
-              <select v-model.number="state.per_page" @change="applyFilters({ page: 1 })" class="rounded-md border p-1">
-                  <option :value="10">10</option>
-                  <option :value="25">25</option>
-                  <option :value="50">50</option>
-              </select>
-          </div>
+        <div class="ml-auto flex items-center gap-2">
+          <label class="text-sm">Per page:</label>
+          <select v-model.number="state.per_page" @change="applyFilters({ page: 1 })" class="rounded-md border p-1">
+            <option :value="10">10</option>
+            <option :value="25">25</option>
+            <option :value="50">50</option>
+          </select>
+        </div>
       </div>
-
     </div>
   </AppLayout>
-
 </template>

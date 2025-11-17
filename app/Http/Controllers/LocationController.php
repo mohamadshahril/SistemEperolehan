@@ -15,7 +15,8 @@ class LocationController extends Controller
     {
         $validated = $request->validate([
             'search' => ['nullable', 'string'],
-            'sort_by' => ['nullable', Rule::in(['location_iso_code', 'location_name', 'parent_iso_code', 'created_at'])],
+            'status' => ['nullable', Rule::in(['1','2'])],
+            'sort_by' => ['nullable', Rule::in(['location_iso_code', 'location_name', 'parent_iso_code', 'status', 'created_at'])],
             'sort_dir' => ['nullable', Rule::in(['asc', 'desc'])],
             'page' => ['nullable', 'integer', 'min:1'],
             'per_page' => ['nullable', 'integer', 'min:1', 'max:100'],
@@ -31,6 +32,10 @@ class LocationController extends Controller
             });
         }
 
+        if ($status = $request->input('status')) {
+            $query->where('status', (int) $status);
+        }
+
         $sortBy = $request->input('sort_by', 'created_at');
         $sortDir = $request->input('sort_dir', 'desc');
         $query->orderBy($sortBy, $sortDir);
@@ -42,9 +47,14 @@ class LocationController extends Controller
             'locations' => $locations,
             'filters' => [
                 'search' => $request->input('search'),
+                'status' => $request->input('status'),
                 'sort_by' => $sortBy,
                 'sort_dir' => $sortDir,
                 'per_page' => $perPage,
+            ],
+            'statuses' => [
+                ['value' => 1, 'label' => 'Active'],
+                ['value' => 2, 'label' => 'Inactive'],
             ],
         ]);
     }
@@ -56,7 +66,9 @@ class LocationController extends Controller
 
     public function store(LocationStoreRequest $request)
     {
-        Location::create($request->validated());
+        $data = $request->validated();
+        $data['status'] = $data['status'] ?? 1;
+        Location::create($data);
 
         return redirect()->route('locations.index')->with('success', 'Location created successfully.');
     }
@@ -70,7 +82,8 @@ class LocationController extends Controller
 
     public function update(LocationUpdateRequest $request, Location $location)
     {
-        $location->update($request->validated());
+        $data = $request->validated();
+        $location->update($data);
 
         return redirect()->route('locations.index')->with('success', 'Location updated successfully.');
     }

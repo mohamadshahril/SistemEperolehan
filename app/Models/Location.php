@@ -15,6 +15,11 @@ class Location extends Model
         'location_iso_code',
         'location_name',
         'parent_iso_code',
+        'status',
+    ];
+
+    protected $casts = [
+        'status' => 'integer',
     ];
 
     /**

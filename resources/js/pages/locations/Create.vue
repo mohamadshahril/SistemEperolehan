@@ -7,6 +7,7 @@ const form = useForm({
   location_iso_code: '',
   location_name: '',
   parent_iso_code: '',
+  status: 1 as 1 | 2,
 })
 
 const submitting = ref(false)
@@ -45,6 +46,15 @@ function submit() {
           <label class="block text-sm font-medium">Parent ISO Code (optional)</label>
           <input v-model="form.parent_iso_code" type="text" class="mt-1 block w-full rounded-md border p-2" @input="form.parent_iso_code = form.parent_iso_code.toUpperCase()" />
           <div v-if="form.errors.parent_iso_code" class="mt-1 text-sm text-red-600">{{ form.errors.parent_iso_code }}</div>
+        </div>
+
+        <div>
+          <label class="block text-sm font-medium">Status</label>
+          <select v-model.number="form.status" class="mt-1 block w-full rounded-md border p-2">
+            <option :value="1">Active</option>
+            <option :value="2">Inactive</option>
+          </select>
+          <div v-if="form.errors.status" class="mt-1 text-sm text-red-600">{{ form.errors.status }}</div>
         </div>
 
         <div class="flex items-center gap-3">

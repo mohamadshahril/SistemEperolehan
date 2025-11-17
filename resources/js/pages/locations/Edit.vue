@@ -1,16 +1,17 @@
 <script setup lang="ts">
 import AppLayout from '@/layouts/AppLayout.vue'
-import { Head, useForm, router } from '@inertiajs/vue3'
+import { Head, useForm } from '@inertiajs/vue3'
 import { ref } from 'vue'
 
 const props = defineProps<{
-  location: { id: number; location_iso_code: string; location_name: string; parent_iso_code: string | null }
+  location: { id: number; location_iso_code: string; location_name: string; parent_iso_code: string | null; status?: number }
 }>()
 
 const form = useForm({
   location_iso_code: props.location.location_iso_code,
   location_name: props.location.location_name,
   parent_iso_code: props.location.parent_iso_code ?? '',
+  status: (props.location.status ?? 1) as 1 | 2,
 })
 
 const submitting = ref(false)
@@ -22,10 +23,7 @@ function submit() {
   })
 }
 
-function destroyLocation() {
-  if (!confirm('Delete this location?')) return
-  router.delete(`/locations/${props.location.id}`)
-}
+// Delete action temporarily disabled on UI
 </script>
 
 <template>
@@ -54,6 +52,15 @@ function destroyLocation() {
           <label class="block text-sm font-medium">Parent ISO Code (optional)</label>
           <input v-model="form.parent_iso_code" type="text" class="mt-1 block w-full rounded-md border p-2" />
           <div v-if="form.errors.parent_iso_code" class="mt-1 text-sm text-red-600">{{ form.errors.parent_iso_code }}</div>
+        </div>
+
+        <div>
+          <label class="block text-sm font-medium">Status</label>
+          <select v-model.number="form.status" class="mt-1 block w-full rounded-md border p-2">
+            <option :value="1">Active</option>
+            <option :value="2">Inactive</option>
+          </select>
+          <div v-if="form.errors.status" class="mt-1 text-sm text-red-600">{{ form.errors.status }}</div>
         </div>
 
         <div class="flex items-center gap-3">

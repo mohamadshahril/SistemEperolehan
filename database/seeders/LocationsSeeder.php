@@ -31,7 +31,7 @@ class LocationsSeeder extends Seeder
             // upsert by unique keys to be idempotent
             Location::updateOrCreate(
                 ['location_iso_code' => $loc['location_iso_code']],
-                $loc
+                array_merge($loc, ['status' => 1])
             );
         }
     }
