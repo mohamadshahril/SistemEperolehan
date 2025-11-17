@@ -288,6 +288,17 @@ class PurchaseRequestController extends Controller
             }
         }
 
+        // Enforce total cost must not exceed the budget
+        $total = 0.0;
+        foreach ($validated['items'] as $item) {
+            $qty = (int)$item['quantity'];
+            $price = (float)$item['price'];
+            $total += $qty * $price;
+        }
+        if ($total > (float)$validated['budget']) {
+            return back()->withErrors(['budget' => 'Total items cost (RM ' . number_format($total, 2) . ') must not exceed the budget.'])->withInput();
+        }
+
         $path = null;
         if ($request->hasFile('attachment')) {
             $path = $request->file('attachment')->store('purchase_requests', 'public');
@@ -391,6 +402,17 @@ class PurchaseRequestController extends Controller
             if ((float)$item['price'] > (float)$validated['budget']) {
                 return back()->withErrors(["items.$idx.price" => 'Item price must not exceed the budget.'])->withInput();
             }
+        }
+
+        // Enforce total cost must not exceed the budget
+        $total = 0.0;
+        foreach ($validated['items'] as $item) {
+            $qty = (int)$item['quantity'];
+            $price = (float)$item['price'];
+            $total += $qty * $price;
+        }
+        if ($total > (float)$validated['budget']) {
+            return back()->withErrors(['budget' => 'Total items cost (RM ' . number_format($total, 2) . ') must not exceed the budget.'])->withInput();
         }
 
         // Handle optional attachment replacement

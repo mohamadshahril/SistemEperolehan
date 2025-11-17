@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import AppLayout from '@/layouts/AppLayout.vue'
 import { Head, useForm } from '@inertiajs/vue3'
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 
 const props = defineProps<{
   options: {
@@ -27,6 +27,23 @@ const form = useForm({
 })
 
 const submitting = ref(false)
+
+// Live total and budget check
+const totalCost = computed(() => {
+  try {
+    return (form.items || []).reduce((sum: number, it: any) => {
+      const qty = Number(it.quantity || 0)
+      const price = Number(it.price || 0)
+      return sum + qty * price
+    }, 0)
+  } catch {
+    return 0
+  }
+})
+const overBudget = computed(() => {
+  const budgetNum = Number(form.budget || 0)
+  return totalCost.value > budgetNum && budgetNum > 0
+})
 
 function addItem() {
   const nextNo = (form.items?.length || 0) + 1
@@ -163,6 +180,15 @@ function submit() {
             </table>
           </div>
           <div v-if="form.errors.items" class="mt-1 text-sm text-red-600">{{ form.errors.items }}</div>
+          <div class="mt-3 flex items-center justify-between text-sm">
+            <div>
+              <span class="text-muted-foreground">Total:</span>
+              <strong>RM{{ Number(totalCost).toLocaleString('en-MY', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }}</strong>
+            </div>
+            <div v-if="overBudget" class="text-red-600">
+              Total exceeds budget.
+            </div>
+          </div>
         </div>
 
         <div>
@@ -179,7 +205,7 @@ function submit() {
         </div>
 
         <div class="flex items-center gap-3">
-          <button type="submit" :disabled="form.processing || submitting" class="rounded-md bg-primary px-4 py-2 text-white disabled:opacity-50">
+          <button type="submit" :disabled="form.processing || submitting || overBudget" class="rounded-md bg-primary px-4 py-2 text-white disabled:opacity-50">
             {{ form.processing || submitting ? 'Submitting...' : 'Submit Request' }}
           </button>
           <a href="/purchase-requests" class="text-sm hover:underline">Cancel</a>
