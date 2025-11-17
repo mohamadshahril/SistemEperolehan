@@ -11,7 +11,7 @@ class Vot extends Model
 
     protected $fillable = [
         'vot_code',
-        'vot_name',
+        'vot_description',
         'status',
     ];
 

@@ -17,6 +17,7 @@ class DatabaseSeeder extends Seeder
         $this->call([
             LocationsSeeder::class,
             VotsSeeder::class,
+            FileReferencesSeeder::class,
             VendorsSeeder::class,
         ]);
 

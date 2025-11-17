@@ -5,7 +5,7 @@ import { reactive } from 'vue'
 
 const props = defineProps<{
   vots: {
-    data: Array<{ id: number; vot_code: number; vot_name: string; status: number }>
+    data: Array<{ id: number; vot_code: number; vot_description: string; status: number }>
     links: Array<{ url: string | null; label: string; active: boolean }>
   }
   filters: {
@@ -95,7 +95,7 @@ function destroyVot(id: number) {
           <thead>
             <tr>
               <th class="px-3 py-2 text-left"><button @click="sortBy('vot_code')">Code</button></th>
-              <th class="px-3 py-2 text-left"><button @click="sortBy('vot_name')">Name</button></th>
+              <th class="px-3 py-2 text-left"><button @click="sortBy('vot_description')">Description</button></th>
               <th class="px-3 py-2 text-left"><button @click="sortBy('status')">Status</button></th>
               <th class="px-3 py-2 text-right">Actions</th>
             </tr>
@@ -103,7 +103,7 @@ function destroyVot(id: number) {
           <tbody>
             <tr v-for="row in props.vots.data" :key="row.id" class="border-b">
               <td class="px-3 py-2 font-mono">{{ row.vot_code }}</td>
-              <td class="px-3 py-2">{{ row.vot_name }}</td>
+              <td class="px-3 py-2">{{ row.vot_description }}</td>
               <td class="px-3 py-2">
                 <span :class="row.status === 1 ? 'text-green-700' : 'text-gray-500'">{{ row.status === 1 ? 'Active' : 'Inactive' }}</span>
               </td>

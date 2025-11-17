@@ -14,7 +14,7 @@ return new class extends Migration
         Schema::create('vots', function (Blueprint $table) {
             $table->id();
             $table->integer('vot_code')->unique();
-            $table->string('vot_name');
+            $table->string('vot_description',100);
             $table->tinyInteger('status')->default(1)->comment('1 = active, 2 = inactive');
             $table->timestamps();
             $table->softDeletes();

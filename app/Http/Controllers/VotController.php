@@ -14,7 +14,7 @@ class VotController extends Controller
         $request->validate([
             'search' => ['nullable', 'string'],
             'status' => ['nullable', Rule::in(['1','2'])],
-            'sort_by' => ['nullable', Rule::in(['vot_code','vot_name','status','created_at'])],
+            'sort_by' => ['nullable', Rule::in(['vot_code','vot_description','status','created_at'])],
             'sort_dir' => ['nullable', Rule::in(['asc','desc'])],
             'page' => ['nullable','integer','min:1'],
             'per_page' => ['nullable','integer','min:1','max:100'],
@@ -25,7 +25,7 @@ class VotController extends Controller
         if ($search = $request->string('search')->toString()) {
             $query->where(function ($q) use ($search) {
                 $q->where('vot_code', 'like', "%{$search}%")
-                  ->orWhere('vot_name', 'like', "%{$search}%");
+                  ->orWhere('vot_description', 'like', "%{$search}%");
             });
         }
 
@@ -65,7 +65,7 @@ class VotController extends Controller
     {
         $data = $request->validate([
             'vot_code' => ['required','integer','unique:vots,vot_code'],
-            'vot_name' => ['required','string','max:255'],
+            'vot_description' => ['required','string','max:255'],
             'status' => ['nullable','integer', Rule::in([1,2])],
         ]);
 
@@ -87,7 +87,7 @@ class VotController extends Controller
     {
         $data = $request->validate([
             'vot_code' => ['required','integer', Rule::unique('vots','vot_code')->ignore($vot->id)],
-            'vot_name' => ['required','string','max:255'],
+            'vot_description' => ['required','string','max:255'],
             'status' => ['required','integer', Rule::in([1,2])],
         ]);
 

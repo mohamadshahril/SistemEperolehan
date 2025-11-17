@@ -3,12 +3,12 @@ import AppLayout from '@/layouts/AppLayout.vue'
 import { Head, useForm, router } from '@inertiajs/vue3'
 
 const props = defineProps<{
-  vot: { id: number; vot_code: number; vot_name: string; status: number }
+  vot: { id: number; vot_code: number; vot_description: string; status: number }
 }>()
 
 const form = useForm({
   vot_code: props.vot.vot_code,
-  vot_name: props.vot.vot_name,
+  vot_description: props.vot.vot_description,
   status: props.vot.status as 1 | 2,
   _method: 'PUT' as const,
 })
@@ -41,8 +41,8 @@ function destroyVot() {
 
         <div>
           <label class="block text-sm font-medium">VOT Name</label>
-          <input v-model.trim="form.vot_name" type="text" class="mt-1 block w-full rounded-md border p-2" />
-          <div v-if="form.errors.vot_name" class="mt-1 text-sm text-red-600">{{ form.errors.vot_name }}</div>
+          <input v-model.trim="form.vot_description" type="text" class="mt-1 block w-full rounded-md border p-2" />
+          <div v-if="form.errors.vot_description" class="mt-1 text-sm text-red-600">{{ form.errors.vot_description }}</div>
         </div>
 
         <div>
