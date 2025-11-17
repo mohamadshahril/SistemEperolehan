@@ -7,6 +7,7 @@ use App\Http\Controllers\PurchaseRequestController;
 use App\Http\Controllers\Web\VendorController;
 use App\Http\Controllers\Web\PurchaseOrderController;
 use App\Http\Controllers\LocationController;
+use App\Http\Controllers\VotController;
 
 Route::get('/', function () {
     return Inertia::render('Welcome', [
@@ -35,6 +36,9 @@ Route::middleware(['auth','verified'])->group(function () {
 
     // Locations CRUD
     Route::resource('locations', LocationController::class);
+
+    // Vots CRUD
+    Route::resource('vots', VotController::class);
 
     // Approvals Module (Managers)
     Route::get('approvals', [PurchaseRequestController::class, 'approvalsIndex'])->name('approvals.index');
