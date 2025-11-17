@@ -21,7 +21,10 @@ class User extends Authenticatable
     protected $fillable = [
         'name',
         'email',
-        'password'
+        'password',
+        // Newly added fields to support seeding and mass assignment
+        'staffid',
+        'location_iso_code',
     ];
 
     /**

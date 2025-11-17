@@ -10,10 +10,7 @@ class DatabaseSeeder extends Seeder
 {
     public function run(): void
     {
-        // 1) Users (needed by purchase requests and user_locations)
-        $users = User::factory(5)->create();
-
-        // 2) Reference data
+        // 1) Reference data (locations first so users can reference location_iso_code)
         $this->call([
             LocationsSeeder::class,
             VotsSeeder::class,
@@ -22,7 +19,10 @@ class DatabaseSeeder extends Seeder
             VendorsSeeder::class,
         ]);
 
-        // 3) Business data depending on reference data
+        // 2) Users (after locations to allow factory to set location_iso_code)
+        $users = User::factory(5)->create();
+
+        // 3) Business data depending on reference data and users
         $this->call([
             PurchaseOrdersSeeder::class, // depends on vendors
             UserLocationsSeeder::class,  // depends on users + locations
