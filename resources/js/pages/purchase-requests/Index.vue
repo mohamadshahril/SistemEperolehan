@@ -7,9 +7,9 @@ const props = defineProps<{
   requests: {
     data: Array<{
       id: number
-      item_name: string
-      quantity: number
-      price: string | number
+      title: string
+      budget: string | number
+      purchase_code?: string | null
       status: string
       submitted_at: string | null
       attachment_path?: string | null
@@ -99,7 +99,7 @@ function destroyRequest(id: number) {
           <input
             v-model="state.search"
             type="text"
-            placeholder="Item, purpose, ID, or date (YYYY-MM-DD)"
+            placeholder="Title, code, ID, or date (YYYY-MM-DD)"
             @keyup.enter="applyFilters({ page: 1 })"
             class="mt-1 block w-full rounded-md border p-2"
           />
@@ -139,13 +139,11 @@ function destroyRequest(id: number) {
           <thead class="bg-muted/30">
             <tr>
               <th class="px-4 py-2 text-left text-sm font-medium">
-                <button @click="sortBy('item_name')" class="hover:underline">Item Name</button>
+                <button @click="sortBy('title')" class="hover:underline">Title</button>
               </th>
+              <th class="px-4 py-2 text-left text-sm font-medium">Code</th>
               <th class="px-4 py-2 text-left text-sm font-medium">
-                <button @click="sortBy('quantity')" class="hover:underline">Qty</button>
-              </th>
-              <th class="px-4 py-2 text-left text-sm font-medium">
-                <button @click="sortBy('price')" class="hover:underline">Price</button>
+                <button @click="sortBy('budget')" class="hover:underline">Budget</button>
               </th>
               <th class="px-4 py-2 text-left text-sm font-medium">
                 <button @click="sortBy('submitted_at')" class="hover:underline">Date</button>
@@ -160,12 +158,12 @@ function destroyRequest(id: number) {
           <tbody>
             <tr v-for="row in props.requests.data" :key="row.id" class="odd:bg-white even:bg-muted/10">
               <td class="px-4 py-2">
-                <div class="font-medium">{{ row.item_name }}</div>
+                <div class="font-medium">{{ row.title }}</div>
                 <div class="text-xs text-muted-foreground">#{{ row.id }}</div>
               </td>
-              <td class="px-4 py-2">{{ row.quantity }}</td>
-                <td class="px-4 py-2">{{ 'RM' + Number(row.price).toLocaleString('en-MY', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }}</td>
-                <td class="px-4 py-2">{{ row.submitted_at ? new Date(row.submitted_at).toLocaleDateString('en-GB', { timeZone: 'UTC' }) : '-' }}</td>
+              <td class="px-4 py-2 font-mono">{{ row.purchase_code || '-' }}</td>
+              <td class="px-4 py-2">{{ 'RM' + Number(row.budget).toLocaleString('en-MY', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }}</td>
+              <td class="px-4 py-2">{{ row.submitted_at ? new Date(row.submitted_at).toLocaleDateString('en-GB', { timeZone: 'UTC' }) : '-' }}</td>
               <td class="px-4 py-2">
                 <span
                   class="inline-flex items-center rounded-full px-2 py-0.5 text-xs"

@@ -3,8 +3,10 @@
 namespace App\Http\Controllers;
 
 use App\Models\PurchaseRequest;
+use App\Models\FileReference;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
 use Inertia\Inertia;
@@ -23,7 +25,7 @@ class PurchaseRequestController extends Controller
             'status' => ['nullable', 'string'],
             'from_date' => ['nullable', 'date'],
             'to_date' => ['nullable', 'date', 'after_or_equal:from_date'],
-            'sort_by' => ['nullable', Rule::in(['item_name', 'quantity', 'price', 'submitted_at', 'status'])],
+            'sort_by' => ['nullable', Rule::in(['title', 'budget', 'submitted_at', 'status'])],
             'sort_dir' => ['nullable', Rule::in(['asc', 'desc'])],
             'page' => ['nullable', 'integer', 'min:1'],
             'per_page' => ['nullable', 'integer', 'min:1', 'max:100'],
@@ -31,12 +33,13 @@ class PurchaseRequestController extends Controller
 
         $query = PurchaseRequest::query()->where('user_id', $user->id);
 
-        // Search by item name, purpose, ID, or date (submitted_at)
+        // Search by title, purpose, ID, purchase_code, or date (submitted_at)
         if ($search = $request->string('search')->toString()) {
             $query->where(function ($q) use ($search) {
-                $q->where('item_name', 'like', "%{$search}%")
+                $q->where('title', 'like', "%{$search}%")
                     ->orWhere('purpose', 'like', "%{$search}%")
                     ->orWhere('id', $search)
+                    ->orWhere('purchase_code', 'like', "%{$search}%")
                     ->orWhereDate('submitted_at', $search);
             });
         }
@@ -89,7 +92,7 @@ class PurchaseRequestController extends Controller
             'from_date' => ['nullable', 'date'],
             'to_date' => ['nullable', 'date', 'after_or_equal:from_date'],
             'status' => ['nullable', 'string'],
-            'sort_by' => ['nullable', Rule::in(['id', 'item_name', 'quantity', 'price', 'submitted_at', 'status'])],
+            'sort_by' => ['nullable', Rule::in(['id', 'title', 'budget', 'submitted_at', 'status'])],
             'sort_dir' => ['nullable', Rule::in(['asc', 'desc'])],
             'page' => ['nullable', 'integer', 'min:1'],
             'per_page' => ['nullable', 'integer', 'min:1', 'max:100'],
@@ -105,7 +108,7 @@ class PurchaseRequestController extends Controller
             $query->where('status', $effectiveStatus);
         }
 
-        // Unified search across ref id, employee (name/email), item, status, and date
+        // Unified search across ref id, employee (name/email), title, status, code and date
         if ($search = $request->string('search')->toString()) {
             $normalized = trim($search);
             // If starts with # treat as ID
@@ -115,8 +118,8 @@ class PurchaseRequestController extends Controller
                 if (ctype_digit($idCandidate)) {
                     $q->orWhere('id', (int) $idCandidate);
                 }
-                // Item name
-                $q->orWhere('item_name', 'like', "%{$normalized}%");
+                // Title
+                $q->orWhere('title', 'like', "%{$normalized}%");
                 // Status (even though this view is Pending, allow matching text)
                 $q->orWhere('status', 'like', "%{$normalized}%");
                 // Date (submitted_at) exact date match if looks like date
@@ -129,6 +132,8 @@ class PurchaseRequestController extends Controller
                     $uq->where('name', 'like', "%{$normalized}%")
                        ->orWhere('email', 'like', "%{$normalized}%");
                 });
+                // Purchase code search
+                $q->orWhere('purchase_code', 'like', "%{$normalized}%");
             });
         } elseif ($employee = $request->string('employee')->toString()) { // legacy param
             $query->whereHas('user', function ($q) use ($employee) {
@@ -229,34 +234,84 @@ class PurchaseRequestController extends Controller
 
     public function create()
     {
-        return Inertia::render('purchase-requests/Create');
+        // Load dropdown options
+        $typeProcurements = DB::table('type_procurements')
+            ->select('id', 'procurement_code', 'procurement_description')
+            ->orderBy('procurement_code')
+            ->get();
+        $fileReferences = DB::table('file_references')
+            ->select('id', 'file_code', 'file_description')
+            ->orderBy('file_code')
+            ->get();
+        $vots = DB::table('vots')
+            ->select('id', 'vot_code', 'vot_description')
+            ->orderBy('vot_code')
+            ->get();
+
+        $user = auth()->user();
+        return Inertia::render('purchase-requests/Create', [
+            'options' => [
+                'type_procurements' => $typeProcurements,
+                'file_references' => $fileReferences,
+                'vots' => $vots,
+            ],
+            'current_user' => [
+                'name' => $user?->name,
+                'location_iso_code' => $user?->location_iso_code,
+            ],
+            'today' => now()->toDateString(),
+        ]);
     }
 
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'item_name' => ['required', 'string', 'max:255'],
-            'quantity' => ['required', 'integer', 'min:1'],
-            'price' => ['required', 'numeric', 'min:0'],
+            'title' => ['required', 'string', 'max:255'],
+            'type_procurement_id' => ['required', 'integer', 'exists:type_procurements,id'],
+            'file_reference_id' => ['required', 'integer', 'exists:file_references,id'],
+            'vot_id' => ['required', 'integer', 'exists:vots,id'],
+            'budget' => ['required', 'numeric', 'min:0'],
             'purpose' => ['nullable', 'string', 'max:1000'],
+            'items' => ['required', 'array', 'min:1'],
+            'items.*.item_no' => ['required', 'integer', 'min:1'],
+            'items.*.details' => ['required', 'string', 'max:500'],
+            'items.*.purpose' => ['nullable', 'string', 'max:500'],
+            'items.*.quantity' => ['required', 'integer', 'min:1'],
+            'items.*.price' => ['required', 'numeric', 'min:0'],
             'attachment' => ['nullable', 'file', 'mimes:pdf,jpg,jpeg,png,doc,docx,xls,xlsx', 'max:5120'],
         ]);
+
+        // Enforce per-item price must not exceed the budget
+        foreach ($validated['items'] as $idx => $item) {
+            if ((float)$item['price'] > (float)$validated['budget']) {
+                return back()->withErrors(["items.$idx.price" => 'Item price must not exceed the budget.'])->withInput();
+            }
+        }
 
         $path = null;
         if ($request->hasFile('attachment')) {
             $path = $request->file('attachment')->store('purchase_requests', 'public');
         }
 
-        $purchaseRequest = PurchaseRequest::create([
-            'user_id' => Auth::id(),
-            'item_name' => $validated['item_name'],
-            'quantity' => $validated['quantity'],
-            'price' => $validated['price'],
-            'purpose' => $validated['purpose'] ?? null,
-            'status' => 'Pending',
-            'submitted_at' => now(),
-            'attachment_path' => $path,
-        ]);
+        $user = $request->user();
+        $purchaseRequest = new PurchaseRequest();
+        $purchaseRequest->user_id = $user->id;
+        $purchaseRequest->title = $validated['title'];
+        $purchaseRequest->type_procurement_id = $validated['type_procurement_id'];
+        $purchaseRequest->file_reference_id = $validated['file_reference_id'];
+        $purchaseRequest->vot_id = $validated['vot_id'];
+        $purchaseRequest->location_iso_code = $user->location_iso_code ?? '';
+        $purchaseRequest->budget = $validated['budget'];
+        $purchaseRequest->purpose = $validated['purpose'] ?? null;
+        $purchaseRequest->items = $validated['items'];
+        $purchaseRequest->status = 'Pending';
+        $purchaseRequest->submitted_at = now();
+        $purchaseRequest->attachment_path = $path;
+        $purchaseRequest->save();
+
+        // Generate purchase code after we have an ID
+        $purchaseRequest->purchase_code = $this->generatePurchaseCode($purchaseRequest);
+        $purchaseRequest->save();
 
         return redirect()
             ->route('purchase-requests.index')
@@ -267,20 +322,43 @@ class PurchaseRequestController extends Controller
     {
         // Ownership check
         abort_if($purchaseRequest->user_id !== $request->user()->id, 403);
+        // Load dropdown options similar to create
+        $typeProcurements = DB::table('type_procurements')
+            ->select('id', 'procurement_code', 'procurement_description')
+            ->orderBy('procurement_code')
+            ->get();
+        $fileReferences = DB::table('file_references')
+            ->select('id', 'file_code', 'file_description')
+            ->orderBy('file_code')
+            ->get();
+        $vots = DB::table('vots')
+            ->select('id', 'vot_code', 'vot_description')
+            ->orderBy('vot_code')
+            ->get();
 
         return Inertia::render('purchase-requests/Edit', [
             'request' => [
                 'id' => $purchaseRequest->id,
-                'item_name' => $purchaseRequest->item_name,
-                'quantity' => $purchaseRequest->quantity,
-                'price' => $purchaseRequest->price,
+                'title' => $purchaseRequest->title,
+                'type_procurement_id' => $purchaseRequest->type_procurement_id,
+                'file_reference_id' => $purchaseRequest->file_reference_id,
+                'vot_id' => $purchaseRequest->vot_id,
+                'location_iso_code' => $purchaseRequest->location_iso_code,
+                'budget' => $purchaseRequest->budget,
+                'items' => $purchaseRequest->items,
                 'purpose' => $purchaseRequest->purpose,
                 'status' => $purchaseRequest->status,
                 'submitted_at' => $purchaseRequest->submitted_at,
                 'attachment_path' => $purchaseRequest->attachment_path,
                 'attachment_url' => $purchaseRequest->attachment_path ? Storage::disk('public')->url($purchaseRequest->attachment_path) : null,
+                'purchase_code' => $purchaseRequest->purchase_code,
             ],
             'canEdit' => $purchaseRequest->status === 'Pending',
+            'options' => [
+                'type_procurements' => $typeProcurements,
+                'file_references' => $fileReferences,
+                'vots' => $vots,
+            ],
         ]);
     }
 
@@ -294,12 +372,26 @@ class PurchaseRequestController extends Controller
         }
 
         $validated = $request->validate([
-            'item_name' => ['required', 'string', 'max:255'],
-            'quantity' => ['required', 'integer', 'min:1'],
-            'price' => ['required', 'numeric', 'min:0'],
+            'title' => ['required', 'string', 'max:255'],
+            'type_procurement_id' => ['required', 'integer', 'exists:type_procurements,id'],
+            'file_reference_id' => ['required', 'integer', 'exists:file_references,id'],
+            'vot_id' => ['required', 'integer', 'exists:vots,id'],
+            'budget' => ['required', 'numeric', 'min:0'],
             'purpose' => ['nullable', 'string', 'max:1000'],
+            'items' => ['required', 'array', 'min:1'],
+            'items.*.item_no' => ['required', 'integer', 'min:1'],
+            'items.*.details' => ['required', 'string', 'max:500'],
+            'items.*.purpose' => ['nullable', 'string', 'max:500'],
+            'items.*.quantity' => ['required', 'integer', 'min:1'],
+            'items.*.price' => ['required', 'numeric', 'min:0'],
             'attachment' => ['nullable', 'file', 'mimes:pdf,jpg,jpeg,png,doc,docx,xls,xlsx', 'max:5120'],
         ]);
+
+        foreach ($validated['items'] as $idx => $item) {
+            if ((float)$item['price'] > (float)$validated['budget']) {
+                return back()->withErrors(["items.$idx.price" => 'Item price must not exceed the budget.'])->withInput();
+            }
+        }
 
         // Handle optional attachment replacement
         if ($request->hasFile('attachment')) {
@@ -309,10 +401,13 @@ class PurchaseRequestController extends Controller
             $purchaseRequest->attachment_path = $request->file('attachment')->store('purchase_requests', 'public');
         }
 
-        $purchaseRequest->item_name = $validated['item_name'];
-        $purchaseRequest->quantity = $validated['quantity'];
-        $purchaseRequest->price = $validated['price'];
+        $purchaseRequest->title = $validated['title'];
+        $purchaseRequest->type_procurement_id = $validated['type_procurement_id'];
+        $purchaseRequest->file_reference_id = $validated['file_reference_id'];
+        $purchaseRequest->vot_id = $validated['vot_id'];
+        $purchaseRequest->budget = $validated['budget'];
         $purchaseRequest->purpose = $validated['purpose'] ?? null;
+        $purchaseRequest->items = $validated['items'];
         $purchaseRequest->save();
 
         return redirect()
@@ -339,5 +434,32 @@ class PurchaseRequestController extends Controller
         return redirect()
             ->route('purchase-requests.index')
             ->with('success', 'Purchase request deleted successfully.');
+    }
+
+    /**
+     * Generate a purchase code in format: AIM/BDGT({location})/{file_code}/{vot_code}/{running}
+     * Example: AIM/BDGT/MY-SGR/400-11/232/1
+     */
+    protected function generatePurchaseCode(PurchaseRequest $pr): string
+    {
+        // Location from captured iso code on the request
+        $locationPart = $pr->location_iso_code ?: 'LOC';
+
+        // File reference code
+        $fileCode = FileReference::query()->whereKey($pr->file_reference_id)->value('file_code') ?? 'FILE';
+        // Vot code
+        $votCode = DB::table('vots')->where('id', $pr->vot_id)->value('vot_code') ?? 'VOT';
+
+        // Running number per composite key (location + file + vot)
+        $running = (int) DB::table('purchase_requests')
+            ->where('location_iso_code', $pr->location_iso_code)
+            ->where('file_reference_id', $pr->file_reference_id)
+            ->where('vot_id', $pr->vot_id)
+            ->count();
+        // Next number
+        $running += 1;
+
+        // Include BDGT and location per requirement
+        return sprintf('AIM/BDGT/%s/%s/%s/%d', $locationPart, $fileCode, $votCode, $running);
     }
 }

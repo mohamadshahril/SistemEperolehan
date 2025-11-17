@@ -13,13 +13,18 @@ class PurchaseRequest extends Model
 
     protected $fillable = [
         'user_id',
-        'item_name',
-        'quantity',
-        'price',
+        'title',
+        'type_procurement_id',
+        'file_reference_id',
+        'vot_id',
+        'location_iso_code',
+        'budget',
         'purpose',
+        'items',
         'status',
         'submitted_at',
         'attachment_path',
+        'purchase_code',
         'approval_comment',
         'approved_by',
         'approved_at',
@@ -28,11 +33,27 @@ class PurchaseRequest extends Model
     protected $casts = [
         'submitted_at' => 'datetime',
         'approved_at' => 'datetime',
-        'price' => 'decimal:2',
+        'budget' => 'decimal:2',
+        'items' => 'array',
     ];
 
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
+    }
+
+    public function fileReference(): BelongsTo
+    {
+        return $this->belongsTo(\App\Models\FileReference::class);
+    }
+
+    public function vot(): BelongsTo
+    {
+        return $this->belongsTo(\App\Models\Vot::class);
+    }
+
+    public function typeProcurement(): BelongsTo
+    {
+        return $this->belongsTo(\App\Models\TypeProcurement::class);
     }
 }

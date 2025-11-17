@@ -5,9 +5,10 @@ import { Head } from '@inertiajs/vue3'
 const props = defineProps<{
   request: {
     id: number
-    item_name: string
-    quantity: number
-    price: string
+    title: string
+    budget: number | string
+    purchase_code?: string | null
+    items: Array<{ item_no: number; details: string; purpose?: string | null; quantity: number; price: number | string }>
     purpose: string | null
     status: 'Pending' | 'Approved' | 'Rejected' | string
     submitted_at: string | null
@@ -50,18 +51,16 @@ function badgeClasses(status: string) {
             <div>{{ props.request.user.name }} <span class="text-muted-foreground">({{ props.request.user.email }})</span></div>
           </div>
           <div>
-            <div class="text-sm text-muted-foreground">Item</div>
-            <div>{{ props.request.item_name }}</div>
+            <div class="text-sm text-muted-foreground">Title</div>
+            <div>{{ props.request.title }}</div>
           </div>
-          <div class="grid grid-cols-2 gap-3">
-            <div>
-              <div class="text-sm text-muted-foreground">Quantity</div>
-              <div>{{ props.request.quantity }}</div>
-            </div>
-            <div>
-              <div class="text-sm text-muted-foreground">Price</div>
-              <div>{{ props.request.price }}</div>
-            </div>
+          <div>
+            <div class="text-sm text-muted-foreground">Budget</div>
+            <div>{{ 'RM' + Number(props.request.budget).toLocaleString('en-MY', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }}</div>
+          </div>
+          <div v-if="props.request.purchase_code">
+            <div class="text-sm text-muted-foreground">Code</div>
+            <div class="font-mono">{{ props.request.purchase_code }}</div>
           </div>
         </div>
 
@@ -87,6 +86,32 @@ function badgeClasses(status: string) {
       <div class="mt-6">
         <div class="text-sm text-muted-foreground">Purpose</div>
         <div class="whitespace-pre-wrap">{{ props.request.purpose || '-' }}</div>
+      </div>
+
+      <div class="mt-6">
+        <div class="text-sm text-muted-foreground">Items</div>
+        <div class="overflow-x-auto rounded-md border">
+          <table class="min-w-full divide-y">
+            <thead>
+              <tr>
+                <th class="px-3 py-2 text-left">No.</th>
+                <th class="px-3 py-2 text-left">Details</th>
+                <th class="px-3 py-2 text-left">Purpose</th>
+                <th class="px-3 py-2 text-right">Qty</th>
+                <th class="px-3 py-2 text-right">Price (RM)</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="(it, idx) in props.request.items" :key="idx" class="border-b">
+                <td class="px-3 py-2">{{ it.item_no }}</td>
+                <td class="px-3 py-2">{{ it.details }}</td>
+                <td class="px-3 py-2">{{ it.purpose || '-' }}</td>
+                <td class="px-3 py-2 text-right">{{ it.quantity }}</td>
+                <td class="px-3 py-2 text-right">{{ Number(it.price).toLocaleString('en-MY', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
       </div>
 
       <div class="mt-6">

@@ -5,7 +5,7 @@ import { reactive } from 'vue'
 
 const props = defineProps<{
   requests: {
-    data: Array<{ id:number; item_name:string; quantity:number; price:string; purpose:string|null; submitted_at:string; status:string; approval_comment: string | null; user: { id:number; name:string; email:string } }>
+    data: Array<{ id:number; title:string; budget:number|string; purchase_code?: string|null; purpose:string|null; submitted_at:string|null; status:string; approval_comment: string | null; user: { id:number; name:string; email:string } }>
     links: Array<{ url: string | null; label: string; active: boolean }>
   }
   filters: {
@@ -86,7 +86,7 @@ function submitAction(id: number, action: 'approve' | 'reject') {
   })
 }
 
-function sortBy(column: 'id' | 'item_name' | 'quantity' | 'price' | 'submitted_at' | 'status') {
+function sortBy(column: 'id' | 'title' | 'budget' | 'submitted_at' | 'status') {
   if (state.sort_by === column) {
     state.sort_dir = state.sort_dir === 'asc' ? 'desc' : 'asc'
   } else {
@@ -108,7 +108,7 @@ function sortBy(column: 'id' | 'item_name' | 'quantity' | 'price' | 'submitted_a
       <div class="mb-4 grid grid-cols-1 gap-3 md:grid-cols-6">
         <div class="md:col-span-2">
           <label class="block text-sm font-medium">Search</label>
-          <input v-model="state.search" type="text" placeholder="Ref, employee, item, status or date (YYYY-MM-DD)" class="mt-1 block w-full rounded-md border p-2" @keyup.enter="applyFilters({ page: 1 })" />
+          <input v-model="state.search" type="text" placeholder="Ref, employee, title, code, status or date (YYYY-MM-DD)" class="mt-1 block w-full rounded-md border p-2" @keyup.enter="applyFilters({ page: 1 })" />
         </div>
         <div>
           <label class="block text-sm font-medium">Status</label>
@@ -137,9 +137,9 @@ function sortBy(column: 'id' | 'item_name' | 'quantity' | 'price' | 'submitted_a
               <th class="px-3 py-2 text-left">View</th>
               <th class="px-3 py-2 text-left"><button @click="sortBy('id')" class="hover:underline">Ref</button></th>
               <th class="px-3 py-2 text-left">Employee</th>
-              <th class="px-3 py-2 text-left"><button @click="sortBy('item_name')" class="hover:underline">Item</button></th>
-              <th class="px-3 py-2 text-left"><button @click="sortBy('quantity')" class="hover:underline">Qty</button></th>
-              <th class="px-3 py-2 text-left"><button @click="sortBy('price')" class="hover:underline">Price</button></th>
+              <th class="px-3 py-2 text-left"><button @click="sortBy('title')" class="hover:underline">Title</button></th>
+              <th class="px-3 py-2 text-left">Code</th>
+              <th class="px-3 py-2 text-left"><button @click="sortBy('budget')" class="hover:underline">Budget</button></th>
               <th class="px-3 py-2 text-left"><button @click="sortBy('submitted_at')" class="hover:underline">Submitted</button></th>
               <th class="px-3 py-2 text-left"><button @click="sortBy('status')" class="hover:underline">Status</button></th>
               <th class="px-3 py-2 text-left">Comment</th>
@@ -151,10 +151,10 @@ function sortBy(column: 'id' | 'item_name' | 'quantity' | 'price' | 'submitted_a
               <td class="px-3 py-2"><a class="rounded-md border px-2 py-1 text-sm hover:bg-muted" :href="`/approvals/${r.id}`">View</a></td>
               <td class="px-3 py-2 font-mono"><a class="text-primary hover:underline" :href="`/approvals/${r.id}`">#{{ r.id }}</a></td>
               <td class="px-3 py-2">{{ r.user.name }}</td>
-              <td class="px-3 py-2">{{ r.item_name }}</td>
-              <td class="px-3 py-2">{{ r.quantity }}</td>
-              <td class="px-3 py-2">{{ r.price }}</td>
-              <td class="px-3 py-2">{{ new Date(r.submitted_at).toLocaleString() }}</td>
+              <td class="px-3 py-2">{{ r.title }}</td>
+              <td class="px-3 py-2 font-mono">{{ r.purchase_code || '-' }}</td>
+              <td class="px-3 py-2">{{ 'RM' + Number(r.budget).toLocaleString('en-MY', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }}</td>
+              <td class="px-3 py-2">{{ r.submitted_at ? new Date(r.submitted_at).toLocaleDateString('en-GB', { timeZone: 'UTC' }) : '-' }}</td>
               <td class="px-3 py-2">
                 <span
                   class="inline-flex items-center rounded-full px-2 py-1 text-xs font-medium"
