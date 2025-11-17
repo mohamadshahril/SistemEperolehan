@@ -138,6 +138,7 @@ function destroyRequest(id: number) {
         <table class="min-w-full divide-y">
           <thead class="bg-muted/30">
             <tr>
+              <th class="px-4 py-2 text-left text-sm font-medium">View</th>
               <th class="px-4 py-2 text-left text-sm font-medium">
                 <button @click="sortBy('title')" class="hover:underline">Title</button>
               </th>
@@ -157,6 +158,7 @@ function destroyRequest(id: number) {
           </thead>
           <tbody>
             <tr v-for="row in props.requests.data" :key="row.id" class="odd:bg-white even:bg-muted/10">
+              <td class="px-4 py-2"><a :href="`/purchase-requests/${row.id}`" class="rounded-md border px-2 py-1 text-sm hover:bg-muted">View</a></td>
               <td class="px-4 py-2">
                 <div class="font-medium">{{ row.title }}</div>
                 <div class="text-xs text-muted-foreground">#{{ row.id }}</div>
@@ -193,7 +195,7 @@ function destroyRequest(id: number) {
               </td>
             </tr>
             <tr v-if="props.requests.data.length === 0">
-              <td colspan="7" class="px-4 py-8 text-center text-muted-foreground">No purchase requests found.</td>
+              <td colspan="8" class="px-4 py-8 text-center text-muted-foreground">No purchase requests found.</td>
             </tr>
           </tbody>
         </table>

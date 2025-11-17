@@ -373,6 +373,34 @@ class PurchaseRequestController extends Controller
         ]);
     }
 
+    /**
+     * Show a single purchase request in read-only mode for the owner
+     */
+    public function show(Request $request, PurchaseRequest $purchaseRequest)
+    {
+        // Ownership check
+        abort_if($purchaseRequest->user_id !== $request->user()->id, 403);
+
+        return Inertia::render('purchase-requests/Show', [
+            'request' => [
+                'id' => $purchaseRequest->id,
+                'title' => $purchaseRequest->title,
+                'type_procurement_id' => $purchaseRequest->type_procurement_id,
+                'file_reference_id' => $purchaseRequest->file_reference_id,
+                'vot_id' => $purchaseRequest->vot_id,
+                'location_iso_code' => $purchaseRequest->location_iso_code,
+                'budget' => $purchaseRequest->budget,
+                'items' => $purchaseRequest->items,
+                'purpose' => $purchaseRequest->purpose,
+                'status' => $purchaseRequest->status,
+                'submitted_at' => $purchaseRequest->submitted_at,
+                'attachment_path' => $purchaseRequest->attachment_path,
+                'attachment_url' => $purchaseRequest->attachment_path ? Storage::disk('public')->url($purchaseRequest->attachment_path) : null,
+                'purchase_code' => $purchaseRequest->purchase_code,
+            ],
+        ]);
+    }
+
     public function update(Request $request, PurchaseRequest $purchaseRequest)
     {
         // Ownership and status check
