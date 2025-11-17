@@ -5,19 +5,22 @@ import { reactive } from 'vue'
 
 const props = defineProps<{
   locations: {
-    data: Array<{ id: number; location_iso_code: string; location_name: string; parent_iso_code: string | null }>
+    data: Array<{ id: number; location_iso_code: string; location_name: string; parent_iso_code: string | null; status?: number }>
     links: Array<{ url: string | null; label: string; active: boolean }>
   }
   filters: {
     search?: string | null
+    status?: string | null
     sort_by?: string | null
     sort_dir?: 'asc' | 'desc' | null
     per_page?: number | null
   }
+  statuses?: Array<{ value: number; label: string }>
 }>()
 
 const state = reactive({
   search: props.filters.search ?? '',
+  status: props.filters.status ?? '',
   sort_by: props.filters.sort_by ?? 'created_at',
   sort_dir: (props.filters.sort_dir as 'asc' | 'desc' | null) ?? 'desc',
   per_page: props.filters.per_page ?? 10,
@@ -26,6 +29,7 @@ const state = reactive({
 function applyFilters(extra: Record<string, unknown> = {}) {
   router.get('/locations', {
     search: state.search || undefined,
+    status: state.status || undefined,
     sort_by: state.sort_by || undefined,
     sort_dir: state.sort_dir || undefined,
     per_page: state.per_page || undefined,
@@ -74,6 +78,13 @@ function goTo(url: string | null) {
             class="mt-1 block w-full rounded-md border p-2"
           />
         </div>
+        <div>
+          <label class="block text-sm font-medium">Status</label>
+          <select v-model="state.status" class="mt-1 block w-full rounded-md border p-2">
+            <option value="">All</option>
+            <option v-for="s in (props.statuses || [{ value: 1, label: 'Active' }, { value: 2, label: 'Inactive' }])" :key="s.value" :value="String(s.value)">{{ s.label }}</option>
+          </select>
+        </div>
         <div class="flex items-end">
           <button class="rounded-md border px-3 py-2" @click="applyFilters({ page: 1 })">Apply</button>
         </div>
@@ -86,6 +97,7 @@ function goTo(url: string | null) {
               <th class="px-3 py-2 text-left"><button @click="sortBy('location_iso_code')">ISO Code</button></th>
               <th class="px-3 py-2 text-left"><button @click="sortBy('location_name')">Name</button></th>
               <th class="px-3 py-2 text-left"><button @click="sortBy('parent_iso_code')">Parent Code</button></th>
+              <th class="px-3 py-2 text-left"><button @click="sortBy('status')">Status</button></th>
               <th class="px-3 py-2 text-right">Actions</th>
             </tr>
           </thead>
@@ -94,13 +106,16 @@ function goTo(url: string | null) {
               <td class="px-3 py-2 font-mono">{{ loc.location_iso_code }}</td>
               <td class="px-3 py-2">{{ loc.location_name }}</td>
               <td class="px-3 py-2 font-mono">{{ loc.parent_iso_code || '-' }}</td>
+              <td class="px-3 py-2">
+                <span :class="(loc.status ?? 1) === 1 ? 'text-green-700' : 'text-gray-500'">{{ (loc.status ?? 1) === 1 ? 'Active' : 'Inactive' }}</span>
+              </td>
               <td class="px-3 py-2 text-right">
                 <a :href="`/locations/${loc.id}/edit`" class="text-primary hover:underline">Edit</a>
-<!--                <button class="ml-3 text-red-600 hover:underline" @click="destroyLocation(loc.id)">Delete</button>-->
+  <!--                <button class="ml-3 text-red-600 hover:underline" @click="destroyLocation(loc.id)">Delete</button>-->
               </td>
             </tr>
             <tr v-if="props.locations.data.length === 0">
-              <td colspan="4" class="px-3 py-6 text-center text-sm text-muted-foreground">No locations found.</td>
+              <td colspan="5" class="px-3 py-6 text-center text-sm text-muted-foreground">No locations found.</td>
             </tr>
           </tbody>
         </table>

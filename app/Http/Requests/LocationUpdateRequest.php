@@ -26,6 +26,7 @@ class LocationUpdateRequest extends FormRequest
                 Rule::unique('locations', 'location_name')->ignore($locationId),
             ],
             'parent_iso_code' => ['nullable', 'string', 'max:10'],
+            'status' => ['required', 'integer', 'in:1,2'],
         ];
     }
 }

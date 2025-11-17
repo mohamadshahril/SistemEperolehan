@@ -25,6 +25,7 @@ class LocationStoreRequest extends FormRequest
             'location_iso_code' => ['required', 'string', 'max:10', 'unique:locations,location_iso_code'],
             'location_name' => ['required', 'string', 'max:100', 'unique:locations,location_name'],
             'parent_iso_code' => ['nullable', 'string', 'max:10'],
+            'status' => ['nullable', 'integer', 'in:1,2'],
         ];
     }
 }
