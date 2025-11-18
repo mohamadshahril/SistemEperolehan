@@ -44,7 +44,7 @@ function badgeClasses(status: string) {
       <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
         <div class="space-y-3">
           <div>
-            <div class="text-sm text-muted-foreground">Reference</div>
+            <div class="text-sm text-muted-foreground">Reference ID</div>
             <div class="font-mono">#{{ props.request.id }}</div>
           </div>
           <div>
@@ -53,7 +53,7 @@ function badgeClasses(status: string) {
           </div>
           <div>
             <div class="text-sm text-muted-foreground">Budget</div>
-            <div>{{ 'RM' + Number(props.request.budget).toLocaleString('en-MY', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }}</div>
+            <div>{{ 'RM ' + Number(props.request.budget).toLocaleString('en-MY', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }}</div>
           </div>
           <div v-if="props.request.purchase_ref_no">
             <div class="text-sm text-muted-foreground">Purchase Ref No</div>

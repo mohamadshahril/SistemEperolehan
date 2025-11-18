@@ -164,7 +164,7 @@ function destroyRequest(id: number) {
                 <div class="text-xs text-muted-foreground">#{{ row.id }}</div>
               </td>
               <td class="px-4 py-2 font-mono">{{ row.purchase_ref_no || '-' }}</td>
-              <td class="px-4 py-2">{{ 'RM' + Number(row.budget).toLocaleString('en-MY', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }}</td>
+              <td class="px-4 py-2">{{ 'RM ' + Number(row.budget).toLocaleString('en-MY', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }}</td>
               <td class="px-4 py-2">{{ row.submitted_at ? new Date(row.submitted_at).toLocaleDateString('en-GB', { timeZone: 'UTC' }) : '-' }}</td>
               <td class="px-4 py-2">
                 <span
