@@ -7,12 +7,12 @@ const props = defineProps<{
     id: number
     title: string
     budget: number | string
-    purchase_code?: string | null
+    purchase_ref_no?: string | null
     items: Array<{ item_no: number; details: string; purpose?: string | null; quantity: number; price: number | string }>
     purpose: string | null
     status: 'Pending' | 'Approved' | 'Rejected' | string
     submitted_at: string | null
-    approval_comment: string | null
+    approval_remarks: string | null
     approved_at?: string | null
     approved_by?: number | null
     user: { id: number; name: string; email: string }
@@ -58,9 +58,9 @@ function badgeClasses(status: string) {
             <div class="text-sm text-muted-foreground">Budget</div>
             <div>{{ 'RM' + Number(props.request.budget).toLocaleString('en-MY', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }}</div>
           </div>
-          <div v-if="props.request.purchase_code">
-            <div class="text-sm text-muted-foreground">Code</div>
-            <div class="font-mono">{{ props.request.purchase_code }}</div>
+          <div v-if="props.request.purchase_ref_no">
+            <div class="text-sm text-muted-foreground">Ref No</div>
+            <div class="font-mono">{{ props.request.purchase_ref_no }}</div>
           </div>
         </div>
 
@@ -115,8 +115,8 @@ function badgeClasses(status: string) {
       </div>
 
       <div class="mt-6">
-        <div class="text-sm text-muted-foreground">Approval Comment</div>
-        <div class="whitespace-pre-wrap">{{ props.request.approval_comment || '-' }}</div>
+        <div class="text-sm text-muted-foreground">Approval Remarks</div>
+        <div class="whitespace-pre-wrap">{{ props.request.approval_remarks || '-' }}</div>
       </div>
     </div>
   </AppLayout>

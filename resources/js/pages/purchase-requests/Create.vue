@@ -21,12 +21,21 @@ const form = useForm({
   file_reference_id: '' as any,
   vot_id: '' as any,
   budget: '' as any,
-  purpose: '',
+  // UI uses `note` (singular); backend expects `notes` -> we map in transform below
+  note: '',
   items: [{ item_no: 1, details: '', purpose: '', quantity: 1, price: '' }] as Item[],
   attachment: null as File | null,
 })
 
 const submitting = ref(false)
+
+// Map UI field `note` to backend `notes` on submit
+form.transform((data: any) => {
+  const payload: any = { ...data, notes: data.note }
+  // Avoid sending the UI-only key
+  delete payload.note
+  return payload
+})
 
 // Live total and budget check
 const totalCost = computed(() => {
@@ -69,6 +78,13 @@ function submit() {
   submitting.value = true
   form.post('/purchase-requests', {
     forceFormData: true,
+    onError: (errors: Record<string, any>) => {
+      // Map backend `notes` validation error to UI field `note`
+      if (errors && errors.notes && !errors.note) {
+        // Inertia useForm provides setError to set client-side error key
+        ;(form as any).setError('note', errors.notes)
+      }
+    },
     onFinish: () => (submitting.value = false),
   })
 }
@@ -84,6 +100,13 @@ function submit() {
       </div>
 
       <form @submit.prevent="submit" class="space-y-6">
+
+          <div class="rounded-md border p-3 text-sm text-muted-foreground">
+              <div><strong>User:</strong> {{ props.current_user?.name || '-' }}</div>
+              <div><strong>Location:</strong> {{ props.current_user?.location_iso_code || '-' }}</div>
+              <div><strong>Date:</strong> {{ props.today }}</div>
+          </div>
+
         <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
           <div>
             <label class="block text-sm font-medium">Title</label>
@@ -131,9 +154,9 @@ function submit() {
         </div>
 
         <div>
-          <label class="block text-sm font-medium">Purpose / Remarks</label>
-          <textarea v-model="form.purpose" rows="3" class="mt-1 block w-full rounded-md border p-2"></textarea>
-          <div v-if="form.errors.purpose" class="mt-1 text-sm text-red-600">{{ form.errors.purpose }}</div>
+          <label class="block text-sm font-medium">Notes</label>
+          <textarea v-model="form.note" rows="3" class="mt-1 block w-full rounded-md border p-2"></textarea>
+          <div v-if="form.errors.note" class="mt-1 text-sm text-red-600">{{ form.errors.note }}</div>
         </div>
 
         <div>
@@ -196,12 +219,6 @@ function submit() {
           <input type="file" @change="onFileChange" class="mt-1 block w-full" />
           <div class="mt-1 text-xs text-muted-foreground">Accepted: pdf, jpg, jpeg, png, doc, docx, xls, xlsx. Max 5 MB.</div>
           <div v-if="form.errors.attachment" class="mt-1 text-sm text-red-600">{{ form.errors.attachment }}</div>
-        </div>
-
-        <div class="rounded-md border p-3 text-sm text-muted-foreground">
-          <div><strong>User:</strong> {{ props.current_user?.name || '-' }}</div>
-          <div><strong>Location:</strong> {{ props.current_user?.location_iso_code || '-' }}</div>
-          <div><strong>Date:</strong> {{ props.today }}</div>
         </div>
 
         <div class="flex items-center gap-3">

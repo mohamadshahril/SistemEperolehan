@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\PurchaseRequest;
 use App\Models\FileReference;
+use App\Models\Status;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -31,22 +32,30 @@ class PurchaseRequestController extends Controller
             'per_page' => ['nullable', 'integer', 'min:1', 'max:100'],
         ]);
 
-        $query = PurchaseRequest::query()->where('user_id', $user->id);
+        $query = PurchaseRequest::query()
+            ->where('user_id', $user->id)
+            ->with(['statusRef:id,name']);
 
-        // Search by title, purpose, ID, purchase_code, or date (submitted_at)
+        // Search by title, notes (formerly purpose), ID, purchase_ref_no, or date (submitted_at)
         if ($search = $request->string('search')->toString()) {
             $query->where(function ($q) use ($search) {
                 $q->where('title', 'like', "%{$search}%")
-                    ->orWhere('purpose', 'like', "%{$search}%")
+                    ->orWhere('notes', 'like', "%{$search}%")
                     ->orWhere('id', $search)
-                    ->orWhere('purchase_code', 'like', "%{$search}%")
+                    ->orWhere('purchase_ref_no', 'like', "%{$search}%")
                     ->orWhereDate('submitted_at', $search);
             });
         }
 
-        // Filter by status
-        if ($status = $request->string('status')->toString()) {
-            $query->where('status', $status);
+        // Filter by status (name -> id)
+        if ($statusName = $request->string('status')->toString()) {
+            $statusId = Status::query()->where('name', $statusName)->value('id');
+            if ($statusId) {
+                $query->where('status_id', $statusId);
+            } else {
+                // If unknown status name provided, ensure no results rather than error
+                $query->whereRaw('1=0');
+            }
         }
 
         // Date range filter
@@ -59,6 +68,9 @@ class PurchaseRequestController extends Controller
 
         // Sorting
         $sortBy = $request->input('sort_by', 'submitted_at');
+        if ($sortBy === 'status') {
+            $sortBy = 'status_id';
+        }
         $sortDir = $request->input('sort_dir', 'desc');
         $query->orderBy($sortBy, $sortDir);
 
@@ -99,13 +111,18 @@ class PurchaseRequestController extends Controller
         ]);
 
         $query = PurchaseRequest::query()
-            ->with(['user:id,name,email']);
+            ->with(['user:id,name,email', 'statusRef:id,name']);
 
         // Status filter (default to Pending for backward compatibility)
         $statusParam = $request->string('status')->toString();
         $effectiveStatus = $statusParam !== '' ? $statusParam : 'Pending';
         if ($effectiveStatus !== '' && strtolower($effectiveStatus) !== 'all') {
-            $query->where('status', $effectiveStatus);
+            $statusId = Status::query()->where('name', $effectiveStatus)->value('id');
+            if ($statusId) {
+                $query->where('status_id', $statusId);
+            } else {
+                $query->whereRaw('1=0');
+            }
         }
 
         // Unified search across ref id, employee (name/email), title, status, code and date
@@ -120,8 +137,10 @@ class PurchaseRequestController extends Controller
                 }
                 // Title
                 $q->orWhere('title', 'like', "%{$normalized}%");
-                // Status (even though this view is Pending, allow matching text)
-                $q->orWhere('status', 'like', "%{$normalized}%");
+                // Status name match
+                $q->orWhereHas('statusRef', function ($sq) use ($normalized) {
+                    $sq->where('name', 'like', "%{$normalized}%");
+                });
                 // Date (submitted_at) exact date match if looks like date
                 // Allow formats like YYYY-MM-DD
                 if (preg_match('/^\d{4}-\d{2}-\d{2}$/', $normalized)) {
@@ -132,8 +151,8 @@ class PurchaseRequestController extends Controller
                     $uq->where('name', 'like', "%{$normalized}%")
                        ->orWhere('email', 'like', "%{$normalized}%");
                 });
-                // Purchase code search
-                $q->orWhere('purchase_code', 'like', "%{$normalized}%");
+                // Purchase reference no search
+                $q->orWhere('purchase_ref_no', 'like', "%{$normalized}%");
             });
         } elseif ($employee = $request->string('employee')->toString()) { // legacy param
             $query->whereHas('user', function ($q) use ($employee) {
@@ -151,6 +170,9 @@ class PurchaseRequestController extends Controller
 
         // Sorting (defaults)
         $sortBy = $request->input('sort_by', 'submitted_at');
+        if ($sortBy === 'status') {
+            $sortBy = 'status_id';
+        }
         $sortDir = $request->input('sort_dir', 'desc');
 
         $perPage = (int) $request->input('per_page', 10);
@@ -202,7 +224,7 @@ class PurchaseRequestController extends Controller
         ]);
 
         $purchaseRequest->status = 'Approved';
-        $purchaseRequest->approval_comment = $data['comment'] ?? null;
+        $purchaseRequest->approval_remarks = $data['comment'] ?? null;
         $purchaseRequest->approved_by = $request->user()->id;
         $purchaseRequest->approved_at = now();
         $purchaseRequest->save();
@@ -224,7 +246,7 @@ class PurchaseRequestController extends Controller
         ]);
 
         $purchaseRequest->status = 'Rejected';
-        $purchaseRequest->approval_comment = $data['comment'] ?? null;
+        $purchaseRequest->approval_remarks = $data['comment'] ?? null;
         $purchaseRequest->approved_by = $request->user()->id;
         $purchaseRequest->approved_at = now();
         $purchaseRequest->save();
@@ -271,6 +293,8 @@ class PurchaseRequestController extends Controller
             'file_reference_id' => ['required', 'integer', 'exists:file_references,id'],
             'vot_id' => ['required', 'integer', 'exists:vots,id'],
             'budget' => ['required', 'numeric', 'min:0'],
+            // Canonical field is `notes`; accept legacy `purpose` for backward compatibility
+            'notes' => ['nullable', 'string', 'max:1000'],
             'purpose' => ['nullable', 'string', 'max:1000'],
             'items' => ['required', 'array', 'min:1'],
             'items.*.item_no' => ['required', 'integer', 'min:1'],
@@ -313,15 +337,17 @@ class PurchaseRequestController extends Controller
         $purchaseRequest->vot_id = $validated['vot_id'];
         $purchaseRequest->location_iso_code = $user->location_iso_code ?? '';
         $purchaseRequest->budget = $validated['budget'];
-        $purchaseRequest->purpose = $validated['purpose'] ?? null;
+        // Normalize notes: prefer `notes`, fallback to legacy `purpose`
+        $normalizedNotes = $validated['notes'] ?? $validated['purpose'] ?? null;
+        $purchaseRequest->notes = $normalizedNotes;
         $purchaseRequest->items = $validated['items'];
         $purchaseRequest->status = 'Pending';
         $purchaseRequest->submitted_at = now();
         $purchaseRequest->attachment_path = $path;
         $purchaseRequest->save();
 
-        // Generate purchase code after we have an ID
-        $purchaseRequest->purchase_code = $this->generatePurchaseCode($purchaseRequest);
+        // Generate purchase reference no after we have an ID
+        $purchaseRequest->purchase_ref_no = $this->generatePurchaseRefNo($purchaseRequest);
         $purchaseRequest->save();
 
         return redirect()
@@ -357,12 +383,14 @@ class PurchaseRequestController extends Controller
                 'location_iso_code' => $purchaseRequest->location_iso_code,
                 'budget' => $purchaseRequest->budget,
                 'items' => $purchaseRequest->items,
+                // Expose both for a transitional period; frontend can migrate to `notes`
+                'notes' => $purchaseRequest->notes,
                 'purpose' => $purchaseRequest->purpose,
                 'status' => $purchaseRequest->status,
                 'submitted_at' => $purchaseRequest->submitted_at,
                 'attachment_path' => $purchaseRequest->attachment_path,
                 'attachment_url' => $purchaseRequest->attachment_path ? Storage::disk('public')->url($purchaseRequest->attachment_path) : null,
-                'purchase_code' => $purchaseRequest->purchase_code,
+                'purchase_ref_no' => $purchaseRequest->purchase_ref_no,
             ],
             'canEdit' => $purchaseRequest->status === 'Pending',
             'options' => [
@@ -391,12 +419,13 @@ class PurchaseRequestController extends Controller
                 'location_iso_code' => $purchaseRequest->location_iso_code,
                 'budget' => $purchaseRequest->budget,
                 'items' => $purchaseRequest->items,
+                'notes' => $purchaseRequest->notes,
                 'purpose' => $purchaseRequest->purpose,
                 'status' => $purchaseRequest->status,
                 'submitted_at' => $purchaseRequest->submitted_at,
                 'attachment_path' => $purchaseRequest->attachment_path,
                 'attachment_url' => $purchaseRequest->attachment_path ? Storage::disk('public')->url($purchaseRequest->attachment_path) : null,
-                'purchase_code' => $purchaseRequest->purchase_code,
+                'purchase_ref_no' => $purchaseRequest->purchase_ref_no,
             ],
         ]);
     }
@@ -416,6 +445,8 @@ class PurchaseRequestController extends Controller
             'file_reference_id' => ['required', 'integer', 'exists:file_references,id'],
             'vot_id' => ['required', 'integer', 'exists:vots,id'],
             'budget' => ['required', 'numeric', 'min:0'],
+            // Accept canonical `notes` and legacy `purpose`
+            'notes' => ['nullable', 'string', 'max:1000'],
             'purpose' => ['nullable', 'string', 'max:1000'],
             'items' => ['required', 'array', 'min:1'],
             'items.*.item_no' => ['required', 'integer', 'min:1'],
@@ -456,7 +487,8 @@ class PurchaseRequestController extends Controller
         $purchaseRequest->file_reference_id = $validated['file_reference_id'];
         $purchaseRequest->vot_id = $validated['vot_id'];
         $purchaseRequest->budget = $validated['budget'];
-        $purchaseRequest->purpose = $validated['purpose'] ?? null;
+        $normalizedNotes = $validated['notes'] ?? $validated['purpose'] ?? null;
+        $purchaseRequest->notes = $normalizedNotes;
         $purchaseRequest->items = $validated['items'];
         $purchaseRequest->save();
 
@@ -490,7 +522,7 @@ class PurchaseRequestController extends Controller
      * Generate a purchase code in format: AIM/BDGT({location})/{file_code}/{vot_code}/{running}
      * Example: AIM/BDGT/MY-SGR/400-11/232/1
      */
-    protected function generatePurchaseCode(PurchaseRequest $pr): string
+    protected function generatePurchaseRefNo(PurchaseRequest $pr): string
     {
         // Location from captured iso code on the request
         $locationPart = $pr->location_iso_code ?: 'LOC';
