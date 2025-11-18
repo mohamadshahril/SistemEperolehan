@@ -22,8 +22,7 @@ return new class extends Migration {
             $table->string('location_iso_code')->index();
             // Budget for the request
             $table->decimal('budget', 12, 2);
-            // Optional high-level purpose/remarks
-            $table->text('purpose')->nullable();
+            $table->text('notes')->nullable();
 
             // Multiple items payload (array of item_no, details, purpose, quantity, price)
             $table->json('items');

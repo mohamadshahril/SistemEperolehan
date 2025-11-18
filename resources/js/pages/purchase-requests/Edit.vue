@@ -15,6 +15,7 @@ const props = defineProps<{
     location_iso_code?: string | null
     budget: number | string
     items: Item[]
+    notes?: string | null
     purpose?: string | null
     status: string
     submitted_at: string | null
@@ -37,7 +38,8 @@ const form = useForm({
   vot_id: props.request.vot_id ?? ('' as any),
   budget: props.request.budget ?? ('' as any),
   items: (props.request.items && props.request.items.length > 0 ? props.request.items : [{ item_no: 1, details: '', purpose: '', quantity: 1, price: '' }]) as Item[],
-  purpose: props.request.purpose ?? '',
+  // UI field `note` maps to backend `notes`
+  note: (props.request.notes ?? props.request.purpose ?? '') as string,
   attachment: null as File | null,
 })
 
@@ -59,6 +61,9 @@ form.transform((data: any) => {
     })),
     _method: 'PUT',
   }
+  // Map UI `note` to backend `notes`
+  payload.notes = data.note
+  delete payload.note
   if (!(data.attachment instanceof File)) {
     delete payload.attachment
   }
@@ -144,6 +149,12 @@ function submit() {
   submitting.value = true
   form.post(`/purchase-requests/${props.request.id}`, {
     forceFormData: true,
+    onError: (errors: Record<string, any>) => {
+      // Map backend `notes` validation error to UI field `note`
+      if (errors && errors.notes && !errors.note) {
+        ;(form as any).setError('note', errors.notes)
+      }
+    },
     onFinish: () => (submitting.value = false),
   })
 }
@@ -251,8 +262,8 @@ function destroyRequest() {
 
         <div>
           <label class="block text-sm font-medium">Purpose / Remarks</label>
-          <textarea v-model="form.purpose" rows="3" class="mt-1 block w-full rounded-md border p-2" :disabled="!props.canEdit"></textarea>
-          <div v-if="form.errors.purpose" class="mt-1 text-sm text-red-600">{{ form.errors.purpose }}</div>
+          <textarea v-model="form.note" rows="3" class="mt-1 block w-full rounded-md border p-2" :disabled="!props.canEdit"></textarea>
+          <div v-if="form.errors.note" class="mt-1 text-sm text-red-600">{{ form.errors.note }}</div>
         </div>
 
         <div>

@@ -20,6 +20,9 @@ class PurchaseRequest extends Model
         'vot_id',
         'location_iso_code',
         'budget',
+        // store notes in DB (formerly `purpose`)
+        'notes',
+        // keep virtual legacy name fillable for mass assignment
         'purpose',
         'items',
         // store status by id
@@ -37,7 +40,7 @@ class PurchaseRequest extends Model
     /**
      * Ensure the virtual status (name) is included when serializing the model.
      */
-    protected $appends = ['status'];
+    protected $appends = ['status', 'purpose'];
 
     protected $casts = [
         'submitted_at' => 'datetime',
@@ -69,6 +72,27 @@ class PurchaseRequest extends Model
     public function statusRef(): BelongsTo
     {
         return $this->belongsTo(Status::class, 'status_id');
+    }
+
+    /**
+     * Backward-compat: expose `purpose` while storing in `notes` column.
+     */
+    public function getPurposeAttribute(): ?string
+    {
+        // Prefer attribute if already set on the model instance
+        if (array_key_exists('notes', $this->attributes)) {
+            return $this->attributes['notes'] ?? null;
+        }
+        // Fallback to attribute accessor
+        return $this->getAttribute('notes');
+    }
+
+    /**
+     * Backward-compat: allow setting `purpose` which writes into `notes`.
+     */
+    public function setPurposeAttribute($value): void
+    {
+        $this->attributes['notes'] = $value;
     }
 
     /**

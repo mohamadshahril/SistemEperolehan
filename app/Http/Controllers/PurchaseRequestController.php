@@ -36,11 +36,11 @@ class PurchaseRequestController extends Controller
             ->where('user_id', $user->id)
             ->with(['statusRef:id,name']);
 
-        // Search by title, purpose, ID, purchase_code, or date (submitted_at)
+        // Search by title, notes (formerly purpose), ID, purchase_code, or date (submitted_at)
         if ($search = $request->string('search')->toString()) {
             $query->where(function ($q) use ($search) {
                 $q->where('title', 'like', "%{$search}%")
-                    ->orWhere('purpose', 'like', "%{$search}%")
+                    ->orWhere('notes', 'like', "%{$search}%")
                     ->orWhere('id', $search)
                     ->orWhere('purchase_code', 'like', "%{$search}%")
                     ->orWhereDate('submitted_at', $search);
@@ -293,6 +293,8 @@ class PurchaseRequestController extends Controller
             'file_reference_id' => ['required', 'integer', 'exists:file_references,id'],
             'vot_id' => ['required', 'integer', 'exists:vots,id'],
             'budget' => ['required', 'numeric', 'min:0'],
+            // Canonical field is `notes`; accept legacy `purpose` for backward compatibility
+            'notes' => ['nullable', 'string', 'max:1000'],
             'purpose' => ['nullable', 'string', 'max:1000'],
             'items' => ['required', 'array', 'min:1'],
             'items.*.item_no' => ['required', 'integer', 'min:1'],
@@ -335,7 +337,9 @@ class PurchaseRequestController extends Controller
         $purchaseRequest->vot_id = $validated['vot_id'];
         $purchaseRequest->location_iso_code = $user->location_iso_code ?? '';
         $purchaseRequest->budget = $validated['budget'];
-        $purchaseRequest->purpose = $validated['purpose'] ?? null;
+        // Normalize notes: prefer `notes`, fallback to legacy `purpose`
+        $normalizedNotes = $validated['notes'] ?? $validated['purpose'] ?? null;
+        $purchaseRequest->notes = $normalizedNotes;
         $purchaseRequest->items = $validated['items'];
         $purchaseRequest->status = 'Pending';
         $purchaseRequest->submitted_at = now();
@@ -379,6 +383,8 @@ class PurchaseRequestController extends Controller
                 'location_iso_code' => $purchaseRequest->location_iso_code,
                 'budget' => $purchaseRequest->budget,
                 'items' => $purchaseRequest->items,
+                // Expose both for a transitional period; frontend can migrate to `notes`
+                'notes' => $purchaseRequest->notes,
                 'purpose' => $purchaseRequest->purpose,
                 'status' => $purchaseRequest->status,
                 'submitted_at' => $purchaseRequest->submitted_at,
@@ -413,6 +419,7 @@ class PurchaseRequestController extends Controller
                 'location_iso_code' => $purchaseRequest->location_iso_code,
                 'budget' => $purchaseRequest->budget,
                 'items' => $purchaseRequest->items,
+                'notes' => $purchaseRequest->notes,
                 'purpose' => $purchaseRequest->purpose,
                 'status' => $purchaseRequest->status,
                 'submitted_at' => $purchaseRequest->submitted_at,
@@ -438,6 +445,8 @@ class PurchaseRequestController extends Controller
             'file_reference_id' => ['required', 'integer', 'exists:file_references,id'],
             'vot_id' => ['required', 'integer', 'exists:vots,id'],
             'budget' => ['required', 'numeric', 'min:0'],
+            // Accept canonical `notes` and legacy `purpose`
+            'notes' => ['nullable', 'string', 'max:1000'],
             'purpose' => ['nullable', 'string', 'max:1000'],
             'items' => ['required', 'array', 'min:1'],
             'items.*.item_no' => ['required', 'integer', 'min:1'],
@@ -478,7 +487,8 @@ class PurchaseRequestController extends Controller
         $purchaseRequest->file_reference_id = $validated['file_reference_id'];
         $purchaseRequest->vot_id = $validated['vot_id'];
         $purchaseRequest->budget = $validated['budget'];
-        $purchaseRequest->purpose = $validated['purpose'] ?? null;
+        $normalizedNotes = $validated['notes'] ?? $validated['purpose'] ?? null;
+        $purchaseRequest->notes = $normalizedNotes;
         $purchaseRequest->items = $validated['items'];
         $purchaseRequest->save();
 

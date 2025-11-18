@@ -32,7 +32,8 @@ class PurchaseRequestFactory extends Factory
             'vot_id' => 1,
             'location_iso_code' => $this->faker->countryCode(),
             'budget' => $this->faker->randomFloat(2, 100, 10000),
-            'purpose' => $this->faker->optional()->sentence(12),
+            // Use canonical `notes`; model still accepts legacy `purpose` for BC
+            'notes' => $this->faker->optional()->sentence(12),
             // Items JSON payload
             'items' => [
                 [

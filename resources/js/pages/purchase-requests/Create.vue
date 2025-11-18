@@ -21,12 +21,21 @@ const form = useForm({
   file_reference_id: '' as any,
   vot_id: '' as any,
   budget: '' as any,
-  purpose: '',
+  // UI uses `note` (singular); backend expects `notes` -> we map in transform below
+  note: '',
   items: [{ item_no: 1, details: '', purpose: '', quantity: 1, price: '' }] as Item[],
   attachment: null as File | null,
 })
 
 const submitting = ref(false)
+
+// Map UI field `note` to backend `notes` on submit
+form.transform((data: any) => {
+  const payload: any = { ...data, notes: data.note }
+  // Avoid sending the UI-only key
+  delete payload.note
+  return payload
+})
 
 // Live total and budget check
 const totalCost = computed(() => {
@@ -69,6 +78,13 @@ function submit() {
   submitting.value = true
   form.post('/purchase-requests', {
     forceFormData: true,
+    onError: (errors: Record<string, any>) => {
+      // Map backend `notes` validation error to UI field `note`
+      if (errors && errors.notes && !errors.note) {
+        // Inertia useForm provides setError to set client-side error key
+        ;(form as any).setError('note', errors.notes)
+      }
+    },
     onFinish: () => (submitting.value = false),
   })
 }
@@ -131,9 +147,9 @@ function submit() {
         </div>
 
         <div>
-          <label class="block text-sm font-medium">Purpose / Remarks</label>
-          <textarea v-model="form.purpose" rows="3" class="mt-1 block w-full rounded-md border p-2"></textarea>
-          <div v-if="form.errors.purpose" class="mt-1 text-sm text-red-600">{{ form.errors.purpose }}</div>
+          <label class="block text-sm font-medium">Notes</label>
+          <textarea v-model="form.note" rows="3" class="mt-1 block w-full rounded-md border p-2"></textarea>
+          <div v-if="form.errors.note" class="mt-1 text-sm text-red-600">{{ form.errors.note }}</div>
         </div>
 
         <div>
