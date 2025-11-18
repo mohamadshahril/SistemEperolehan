@@ -2,6 +2,7 @@
 import AppLayout from '@/layouts/AppLayout.vue'
 import { Head, router } from '@inertiajs/vue3'
 import { reactive } from 'vue'
+import ActionButtons from '@/components/ActionButtons.vue'
 
 const props = defineProps<{
   requests: {
@@ -158,7 +159,10 @@ function destroyRequest(id: number) {
           </thead>
           <tbody>
             <tr v-for="row in props.requests.data" :key="row.id" class="odd:bg-white even:bg-muted/10">
-              <td class="px-4 py-2"><a :href="`/purchase-requests/${row.id}`" class="rounded-md border px-2 py-1 text-sm hover:bg-muted">View</a></td>
+                <td class="px-4 py-2">
+                    <ActionButtons :view-url="`/purchase-requests/${row.id}`" />
+                </td>
+<!--              <td class="px-4 py-2"><a :href="`/purchase-requests/${row.id}`" class="rounded-md border px-2 py-1 text-sm hover:bg-muted">View</a></td>-->
               <td class="px-4 py-2">
                 <div class="font-medium">{{ row.title }}</div>
                 <div class="text-xs text-muted-foreground">#{{ row.id }}</div>
@@ -178,21 +182,35 @@ function destroyRequest(id: number) {
                   {{ row.status }}
                 </span>
               </td>
-              <td class="px-4 py-2">
-                <a v-if="row.attachment_path" :href="`/storage/${row.attachment_path}`" target="_blank" class="text-primary hover:underline">View</a>
-                <span v-else class="text-muted-foreground">-</span>
-              </td>
-              <td class="px-4 py-2">
-                <div class="flex items-center gap-3">
-                  <a :href="`/purchase-requests/${row.id}/edit?print=1`" class="text-primary hover:underline">Print</a>
-                  <template v-if="row.status === 'Pending'">
-                    <span class="text-muted-foreground">|</span>
-                    <a :href="`/purchase-requests/${row.id}/edit`" class="text-primary hover:underline">Edit</a>
-                    <button @click="destroyRequest(row.id)" class="text-red-600 hover:underline">Delete</button>
-                  </template>
-                  <span v-else class="text-muted-foreground">—</span>
-                </div>
-              </td>
+                <td class="px-4 py-2">
+                    <ActionButtons :attach-url="`/storage/${row.attachment_path}`"
+                    />
+                </td>
+<!--              <td class="px-4 py-2">-->
+<!--                <a v-if="row.attachment_path" :href="`/storage/${row.attachment_path}`" target="_blank" class="text-primary hover:underline">View</a>-->
+<!--                <span v-else class="text-muted-foreground">-</span>-->
+<!--              </td>-->
+
+                <td class="px-4 py-2">
+                    <ActionButtons
+                        :print-url="`/purchase-requests/${row.id}/edit?print=1`"
+                        :edit-url="row.status === 'Pending' ? `/purchase-requests/${row.id}/edit` : null"
+                        :can-edit="row.status === 'Pending'"
+                        :can-delete="row.status === 'Pending'"
+                        @delete="destroyRequest(row.id)"
+                    />
+                </td>
+<!--              <td class="px-4 py-2">-->
+<!--                <div class="flex items-center gap-3">-->
+<!--                  <a :href="`/purchase-requests/${row.id}/edit?print=1`" class="text-primary hover:underline">Print</a>-->
+<!--                  <template v-if="row.status === 'Pending'">-->
+<!--                    <span class="text-muted-foreground">|</span>-->
+<!--                    <a :href="`/purchase-requests/${row.id}/edit`" class="text-primary hover:underline">Edit</a>-->
+<!--                    <button @click="destroyRequest(row.id)" class="text-red-600 hover:underline">Delete</button>-->
+<!--                  </template>-->
+<!--                  <span v-else class="text-muted-foreground">—</span>-->
+<!--                </div>-->
+<!--              </td>-->
             </tr>
             <tr v-if="props.requests.data.length === 0">
               <td colspan="8" class="px-4 py-8 text-center text-muted-foreground">No purchase requests found.</td>
