@@ -36,13 +36,13 @@ class PurchaseRequestController extends Controller
             ->where('user_id', $user->id)
             ->with(['statusRef:id,name']);
 
-        // Search by title, notes (formerly purpose), ID, purchase_code, or date (submitted_at)
+        // Search by title, notes (formerly purpose), ID, purchase_ref_no, or date (submitted_at)
         if ($search = $request->string('search')->toString()) {
             $query->where(function ($q) use ($search) {
                 $q->where('title', 'like', "%{$search}%")
                     ->orWhere('notes', 'like', "%{$search}%")
                     ->orWhere('id', $search)
-                    ->orWhere('purchase_code', 'like', "%{$search}%")
+                    ->orWhere('purchase_ref_no', 'like', "%{$search}%")
                     ->orWhereDate('submitted_at', $search);
             });
         }
@@ -151,8 +151,8 @@ class PurchaseRequestController extends Controller
                     $uq->where('name', 'like', "%{$normalized}%")
                        ->orWhere('email', 'like', "%{$normalized}%");
                 });
-                // Purchase code search
-                $q->orWhere('purchase_code', 'like', "%{$normalized}%");
+                // Purchase reference no search
+                $q->orWhere('purchase_ref_no', 'like', "%{$normalized}%");
             });
         } elseif ($employee = $request->string('employee')->toString()) { // legacy param
             $query->whereHas('user', function ($q) use ($employee) {
@@ -224,7 +224,7 @@ class PurchaseRequestController extends Controller
         ]);
 
         $purchaseRequest->status = 'Approved';
-        $purchaseRequest->approval_comment = $data['comment'] ?? null;
+        $purchaseRequest->approval_remarks = $data['comment'] ?? null;
         $purchaseRequest->approved_by = $request->user()->id;
         $purchaseRequest->approved_at = now();
         $purchaseRequest->save();
@@ -246,7 +246,7 @@ class PurchaseRequestController extends Controller
         ]);
 
         $purchaseRequest->status = 'Rejected';
-        $purchaseRequest->approval_comment = $data['comment'] ?? null;
+        $purchaseRequest->approval_remarks = $data['comment'] ?? null;
         $purchaseRequest->approved_by = $request->user()->id;
         $purchaseRequest->approved_at = now();
         $purchaseRequest->save();
@@ -346,8 +346,8 @@ class PurchaseRequestController extends Controller
         $purchaseRequest->attachment_path = $path;
         $purchaseRequest->save();
 
-        // Generate purchase code after we have an ID
-        $purchaseRequest->purchase_code = $this->generatePurchaseCode($purchaseRequest);
+        // Generate purchase reference no after we have an ID
+        $purchaseRequest->purchase_ref_no = $this->generatePurchaseRefNo($purchaseRequest);
         $purchaseRequest->save();
 
         return redirect()
@@ -390,7 +390,7 @@ class PurchaseRequestController extends Controller
                 'submitted_at' => $purchaseRequest->submitted_at,
                 'attachment_path' => $purchaseRequest->attachment_path,
                 'attachment_url' => $purchaseRequest->attachment_path ? Storage::disk('public')->url($purchaseRequest->attachment_path) : null,
-                'purchase_code' => $purchaseRequest->purchase_code,
+                'purchase_ref_no' => $purchaseRequest->purchase_ref_no,
             ],
             'canEdit' => $purchaseRequest->status === 'Pending',
             'options' => [
@@ -425,7 +425,7 @@ class PurchaseRequestController extends Controller
                 'submitted_at' => $purchaseRequest->submitted_at,
                 'attachment_path' => $purchaseRequest->attachment_path,
                 'attachment_url' => $purchaseRequest->attachment_path ? Storage::disk('public')->url($purchaseRequest->attachment_path) : null,
-                'purchase_code' => $purchaseRequest->purchase_code,
+                'purchase_ref_no' => $purchaseRequest->purchase_ref_no,
             ],
         ]);
     }
@@ -522,7 +522,7 @@ class PurchaseRequestController extends Controller
      * Generate a purchase code in format: AIM/BDGT({location})/{file_code}/{vot_code}/{running}
      * Example: AIM/BDGT/MY-SGR/400-11/232/1
      */
-    protected function generatePurchaseCode(PurchaseRequest $pr): string
+    protected function generatePurchaseRefNo(PurchaseRequest $pr): string
     {
         // Location from captured iso code on the request
         $locationPart = $pr->location_iso_code ?: 'LOC';

@@ -9,7 +9,7 @@ const props = defineProps<{
       id: number
       title: string
       budget: string | number
-      purchase_code?: string | null
+      purchase_ref_no?: string | null
       status: string
       submitted_at: string | null
       attachment_path?: string | null
@@ -99,7 +99,7 @@ function destroyRequest(id: number) {
           <input
             v-model="state.search"
             type="text"
-            placeholder="Title, code, ID, or date (YYYY-MM-DD)"
+            placeholder="Title, ref no, ID, or date (YYYY-MM-DD)"
             @keyup.enter="applyFilters({ page: 1 })"
             class="mt-1 block w-full rounded-md border p-2"
           />
@@ -142,7 +142,7 @@ function destroyRequest(id: number) {
               <th class="px-4 py-2 text-left text-sm font-medium">
                 <button @click="sortBy('title')" class="hover:underline">Title</button>
               </th>
-              <th class="px-4 py-2 text-left text-sm font-medium">Code</th>
+              <th class="px-4 py-2 text-left text-sm font-medium">Purchase Ref No</th>
               <th class="px-4 py-2 text-left text-sm font-medium">
                 <button @click="sortBy('budget')" class="hover:underline">Budget</button>
               </th>
@@ -163,7 +163,7 @@ function destroyRequest(id: number) {
                 <div class="font-medium">{{ row.title }}</div>
                 <div class="text-xs text-muted-foreground">#{{ row.id }}</div>
               </td>
-              <td class="px-4 py-2 font-mono">{{ row.purchase_code || '-' }}</td>
+              <td class="px-4 py-2 font-mono">{{ row.purchase_ref_no || '-' }}</td>
               <td class="px-4 py-2">{{ 'RM' + Number(row.budget).toLocaleString('en-MY', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }}</td>
               <td class="px-4 py-2">{{ row.submitted_at ? new Date(row.submitted_at).toLocaleDateString('en-GB', { timeZone: 'UTC' }) : '-' }}</td>
               <td class="px-4 py-2">

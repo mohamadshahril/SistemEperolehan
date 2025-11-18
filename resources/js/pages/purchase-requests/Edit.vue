@@ -21,7 +21,7 @@ const props = defineProps<{
     submitted_at: string | null
     attachment_path?: string | null
     attachment_url?: string | null
-    purchase_code?: string | null
+    purchase_ref_no?: string | null
   }
   canEdit: boolean
   options: {
@@ -185,7 +185,7 @@ function destroyRequest() {
         </div>
         <div class="space-y-2">
           <div><span class="font-medium">Title:</span> {{ props.request.title }}</div>
-          <div><span class="font-medium">Code:</span> {{ props.request.purchase_code || '-' }}</div>
+          <div><span class="font-medium">Ref No:</span> {{ props.request.purchase_ref_no || '-' }}</div>
           <div><span class="font-medium">Location:</span> {{ props.request.location_iso_code || '-' }}</div>
           <div><span class="font-medium">Budget:</span> {{ 'RM' + Number(props.request.budget).toLocaleString('en-MY', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }}</div>
           <div v-if="props.request.purpose"><span class="font-medium">Purpose:</span> {{ props.request.purpose }}</div>
@@ -261,7 +261,7 @@ function destroyRequest() {
         </div>
 
         <div>
-          <label class="block text-sm font-medium">Purpose / Remarks</label>
+          <label class="block text-sm font-medium">Notes</label>
           <textarea v-model="form.note" rows="3" class="mt-1 block w-full rounded-md border p-2" :disabled="!props.canEdit"></textarea>
           <div v-if="form.errors.note" class="mt-1 text-sm text-red-600">{{ form.errors.note }}</div>
         </div>
@@ -324,7 +324,7 @@ function destroyRequest() {
         </div>
 
         <div class="rounded-md border p-3 text-sm text-muted-foreground">
-          <div><strong>Code:</strong> {{ props.request.purchase_code || '-' }}</div>
+          <div><strong>Purchase Ref No:</strong> {{ props.request.purchase_ref_no || '-' }}</div>
           <div><strong>Location:</strong> {{ props.request.location_iso_code || '-' }}</div>
           <div><strong>Date:</strong> {{ props.request.submitted_at ? new Date(props.request.submitted_at).toLocaleDateString('en-GB', { timeZone: 'UTC' }) : '-' }}</div>
         </div>

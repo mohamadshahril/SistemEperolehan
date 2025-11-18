@@ -33,9 +33,9 @@ return new class extends Migration {
             $table->string('attachment_path')->nullable();
 
             // Generated purchase code: AIM/{location_iso_code}/{file_code}/{vot_code}/{running}
-            $table->string('purchase_code')->nullable()->unique();
+            $table->string('purchase_ref_no')->nullable()->unique();
             // Approval fields (merged from 2025_11_14_121500_add_approval_fields_to_purchase_requests_table)
-            $table->text('approval_comment')->nullable();
+            $table->text('approval_remarks')->nullable();
             $table->foreignId('approved_by')->nullable()->constrained('users')->nullOnDelete();
             $table->dateTime('approved_at')->nullable();
             $table->timestamps();

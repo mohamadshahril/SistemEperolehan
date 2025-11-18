@@ -31,8 +31,8 @@ class PurchaseRequest extends Model
         'status',
         'submitted_at',
         'attachment_path',
-        'purchase_code',
-        'approval_comment',
+        'purchase_ref_no',
+        'approval_remarks',
         'approved_by',
         'approved_at',
     ];
@@ -129,8 +129,8 @@ class PurchaseRequest extends Model
                 $model->status_id = Status::query()->where('name', 'Pending')->value('id');
             }
 
-            // Generate purchase_code if not provided
-            if (empty($model->purchase_code)) {
+            // Generate purchase_ref_no if not provided
+            if (empty($model->purchase_ref_no)) {
                 // Require essential parts to exist
                 $locationIso = $model->location_iso_code;
                 $fileId = $model->file_reference_id;
@@ -144,9 +144,9 @@ class PurchaseRequest extends Model
                         $prefix = sprintf('AIM/%s/%s/%s/', $locationIso, $fileCode, $votCode);
                         // Find latest running number for this prefix
                         $latest = static::query()
-                            ->where('purchase_code', 'like', $prefix . '%')
-                            ->orderByDesc('purchase_code')
-                            ->value('purchase_code');
+                            ->where('purchase_ref_no', 'like', $prefix . '%')
+                            ->orderByDesc('purchase_ref_no')
+                            ->value('purchase_ref_no');
 
                         $next = 1;
                         if ($latest) {
@@ -155,7 +155,7 @@ class PurchaseRequest extends Model
                             $next = ctype_digit($lastSegment) ? ((int) $lastSegment + 1) : 1;
                         }
 
-                        $model->purchase_code = $prefix . str_pad((string) $next, 4, '0', STR_PAD_LEFT);
+                        $model->purchase_ref_no = $prefix . str_pad((string) $next, 4, '0', STR_PAD_LEFT);
                     }
                 }
             }
