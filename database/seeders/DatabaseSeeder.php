@@ -17,6 +17,8 @@ class DatabaseSeeder extends Seeder
             FileReferencesSeeder::class,
             TypeProcurementsSeeder::class,
             VendorsSeeder::class,
+            // Ensure statuses exist before any factories/controllers rely on them
+            StatusesSeeder::class,
         ]);
 
         // 2) Users (after locations to allow factory to set location_iso_code)
@@ -26,18 +28,9 @@ class DatabaseSeeder extends Seeder
         $this->call([
             PurchaseOrdersSeeder::class, // depends on vendors
             UserLocationsSeeder::class,  // depends on users + locations
+            PurchaseRequestsSeeder::class, // generate purchase requests with codes
         ]);
 
-        // 4) Example: purchase requests linked to the created users
-        PurchaseRequest::factory(500)
-            ->recycle($users) // ensures user_id comes from the created users
-            ->create();
-
-        // Option B: If you prefer to attach all to a known user, e.g. Test User
-        // $testUser = User::factory()->create([
-        //     'name' => 'Test User',
-        //     'email' => 'test@example.com',
-        // ]);
-        // PurchaseRequest::factory(25)->for($testUser)->create();
+        // 4) Example alternative seeding strategies can be added here if needed
     }
 }

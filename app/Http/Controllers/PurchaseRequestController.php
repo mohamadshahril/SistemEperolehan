@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\PurchaseRequest;
 use App\Models\FileReference;
+use App\Models\Status;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -31,7 +32,9 @@ class PurchaseRequestController extends Controller
             'per_page' => ['nullable', 'integer', 'min:1', 'max:100'],
         ]);
 
-        $query = PurchaseRequest::query()->where('user_id', $user->id);
+        $query = PurchaseRequest::query()
+            ->where('user_id', $user->id)
+            ->with(['statusRef:id,name']);
 
         // Search by title, purpose, ID, purchase_code, or date (submitted_at)
         if ($search = $request->string('search')->toString()) {
@@ -44,9 +47,15 @@ class PurchaseRequestController extends Controller
             });
         }
 
-        // Filter by status
-        if ($status = $request->string('status')->toString()) {
-            $query->where('status', $status);
+        // Filter by status (name -> id)
+        if ($statusName = $request->string('status')->toString()) {
+            $statusId = Status::query()->where('name', $statusName)->value('id');
+            if ($statusId) {
+                $query->where('status_id', $statusId);
+            } else {
+                // If unknown status name provided, ensure no results rather than error
+                $query->whereRaw('1=0');
+            }
         }
 
         // Date range filter
@@ -59,6 +68,9 @@ class PurchaseRequestController extends Controller
 
         // Sorting
         $sortBy = $request->input('sort_by', 'submitted_at');
+        if ($sortBy === 'status') {
+            $sortBy = 'status_id';
+        }
         $sortDir = $request->input('sort_dir', 'desc');
         $query->orderBy($sortBy, $sortDir);
 
@@ -99,13 +111,18 @@ class PurchaseRequestController extends Controller
         ]);
 
         $query = PurchaseRequest::query()
-            ->with(['user:id,name,email']);
+            ->with(['user:id,name,email', 'statusRef:id,name']);
 
         // Status filter (default to Pending for backward compatibility)
         $statusParam = $request->string('status')->toString();
         $effectiveStatus = $statusParam !== '' ? $statusParam : 'Pending';
         if ($effectiveStatus !== '' && strtolower($effectiveStatus) !== 'all') {
-            $query->where('status', $effectiveStatus);
+            $statusId = Status::query()->where('name', $effectiveStatus)->value('id');
+            if ($statusId) {
+                $query->where('status_id', $statusId);
+            } else {
+                $query->whereRaw('1=0');
+            }
         }
 
         // Unified search across ref id, employee (name/email), title, status, code and date
@@ -120,8 +137,10 @@ class PurchaseRequestController extends Controller
                 }
                 // Title
                 $q->orWhere('title', 'like', "%{$normalized}%");
-                // Status (even though this view is Pending, allow matching text)
-                $q->orWhere('status', 'like', "%{$normalized}%");
+                // Status name match
+                $q->orWhereHas('statusRef', function ($sq) use ($normalized) {
+                    $sq->where('name', 'like', "%{$normalized}%");
+                });
                 // Date (submitted_at) exact date match if looks like date
                 // Allow formats like YYYY-MM-DD
                 if (preg_match('/^\d{4}-\d{2}-\d{2}$/', $normalized)) {
@@ -151,6 +170,9 @@ class PurchaseRequestController extends Controller
 
         // Sorting (defaults)
         $sortBy = $request->input('sort_by', 'submitted_at');
+        if ($sortBy === 'status') {
+            $sortBy = 'status_id';
+        }
         $sortDir = $request->input('sort_dir', 'desc');
 
         $perPage = (int) $request->input('per_page', 10);

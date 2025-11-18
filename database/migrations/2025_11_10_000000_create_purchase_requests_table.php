@@ -28,7 +28,8 @@ return new class extends Migration {
             // Multiple items payload (array of item_no, details, purpose, quantity, price)
             $table->json('items');
 
-            $table->string('status')->default('Pending'); // Pending, Approved, Rejected
+            // Store status by id (FK to statuses table). We keep it as a plain FK to avoid order constraints.
+            $table->foreignId('status_id')->index(); // references statuses.id
             $table->dateTime('submitted_at')->nullable();
             $table->string('attachment_path')->nullable();
 
@@ -40,7 +41,7 @@ return new class extends Migration {
             $table->dateTime('approved_at')->nullable();
             $table->timestamps();
             $table->softDeletes();
-            $table->index(['status', 'submitted_at']);
+            $table->index(['status_id', 'submitted_at']);
             $table->index(['approved_by', 'approved_at']);
         });
 
