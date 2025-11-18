@@ -100,6 +100,13 @@ function submit() {
       </div>
 
       <form @submit.prevent="submit" class="space-y-6">
+
+          <div class="rounded-md border p-3 text-sm text-muted-foreground">
+              <div><strong>User:</strong> {{ props.current_user?.name || '-' }}</div>
+              <div><strong>Location:</strong> {{ props.current_user?.location_iso_code || '-' }}</div>
+              <div><strong>Date:</strong> {{ props.today }}</div>
+          </div>
+
         <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
           <div>
             <label class="block text-sm font-medium">Title</label>
@@ -212,12 +219,6 @@ function submit() {
           <input type="file" @change="onFileChange" class="mt-1 block w-full" />
           <div class="mt-1 text-xs text-muted-foreground">Accepted: pdf, jpg, jpeg, png, doc, docx, xls, xlsx. Max 5 MB.</div>
           <div v-if="form.errors.attachment" class="mt-1 text-sm text-red-600">{{ form.errors.attachment }}</div>
-        </div>
-
-        <div class="rounded-md border p-3 text-sm text-muted-foreground">
-          <div><strong>User:</strong> {{ props.current_user?.name || '-' }}</div>
-          <div><strong>Location:</strong> {{ props.current_user?.location_iso_code || '-' }}</div>
-          <div><strong>Date:</strong> {{ props.today }}</div>
         </div>
 
         <div class="flex items-center gap-3">

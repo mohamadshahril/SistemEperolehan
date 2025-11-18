@@ -135,10 +135,10 @@ function sortBy(column: 'id' | 'title' | 'budget' | 'submitted_at' | 'status') {
           <thead>
             <tr>
               <th class="px-3 py-2 text-left">View</th>
-              <th class="px-3 py-2 text-left"><button @click="sortBy('id')" class="hover:underline">Ref</button></th>
+              <th class="px-3 py-2 text-left"><button @click="sortBy('id')" class="hover:underline">Ref Id</button></th>
               <th class="px-3 py-2 text-left">Employee</th>
               <th class="px-3 py-2 text-left"><button @click="sortBy('title')" class="hover:underline">Title</button></th>
-              <th class="px-3 py-2 text-left">Ref No</th>
+              <th class="px-3 py-2 text-left">Purchase Ref No</th>
               <th class="px-3 py-2 text-left"><button @click="sortBy('budget')" class="hover:underline">Budget</button></th>
               <th class="px-3 py-2 text-left"><button @click="sortBy('submitted_at')" class="hover:underline">Submitted</button></th>
               <th class="px-3 py-2 text-left"><button @click="sortBy('status')" class="hover:underline">Status</button></th>
