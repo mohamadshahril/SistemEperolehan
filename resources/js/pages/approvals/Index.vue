@@ -28,8 +28,8 @@ const state = reactive({
   per_page: props.filters.per_page ?? 10,
   sort_by: props.filters.sort_by ?? 'submitted_at',
   sort_dir: (props.filters.sort_dir as 'asc' | 'desc' | null) ?? 'desc',
-  // Store comments per request row so typing in one doesn't mirror to others
-  comments: {} as Record<number, string>,
+  // Store remarks per request row so typing in one doesn't mirror to others
+  remarks: {} as Record<number, string>,
   actingId: null as number | null,
 })
 
@@ -75,12 +75,12 @@ function submitAction(id: number, action: 'approve' | 'reject') {
     state.actingId = id
   }
   const url = action === 'approve' ? `/approvals/${id}/approve` : `/approvals/${id}/reject`
-  const payload = { comment: state.comments[id] || undefined }
+  const payload = { comment: state.remarks[id] || undefined }
   router.post(url, payload, {
     preserveScroll: true,
     onSuccess: () => {
       // Clear only the comment for this specific request
-      state.comments[id] = ''
+      state.remarks[id] = ''
       state.actingId = null
     }
   })
@@ -135,15 +135,15 @@ function sortBy(column: 'id' | 'title' | 'budget' | 'submitted_at' | 'status') {
           <thead>
             <tr>
               <th class="px-3 py-2 text-left">View</th>
-              <th class="px-3 py-2 text-left"><button @click="sortBy('id')" class="hover:underline">Ref Id</button></th>
-              <th class="px-3 py-2 text-left">Employee</th>
+              <th class="px-3 py-2 text-left"><button @click="sortBy('id')" class="hover:underline">Ref ID</button></th>
+              <th class="px-3 py-2 text-left">Applicant's Name</th>
               <th class="px-3 py-2 text-left"><button @click="sortBy('title')" class="hover:underline">Title</button></th>
               <th class="px-3 py-2 text-left">Purchase Ref No</th>
               <th class="px-3 py-2 text-left"><button @click="sortBy('budget')" class="hover:underline">Budget</button></th>
               <th class="px-3 py-2 text-left"><button @click="sortBy('submitted_at')" class="hover:underline">Submitted</button></th>
               <th class="px-3 py-2 text-left"><button @click="sortBy('status')" class="hover:underline">Status</button></th>
-              <th class="px-3 py-2 text-left">Comment</th>
-              <th class="px-3 py-2 text-right">Actions</th>
+              <th class="px-3 py-2 text-left">Remarks</th>
+              <th class="px-3 py-2 text-center">Actions</th>
             </tr>
           </thead>
           <tbody>
@@ -153,7 +153,7 @@ function sortBy(column: 'id' | 'title' | 'budget' | 'submitted_at' | 'status') {
               <td class="px-3 py-2">{{ r.user.name }}</td>
               <td class="px-3 py-2">{{ r.title }}</td>
               <td class="px-3 py-2 font-mono">{{ r.purchase_ref_no || '-' }}</td>
-              <td class="px-3 py-2">{{ 'RM' + Number(r.budget).toLocaleString('en-MY', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }}</td>
+              <td class="px-3 py-2">{{ 'RM ' + Number(r.budget).toLocaleString('en-MY', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }}</td>
               <td class="px-3 py-2">{{ r.submitted_at ? new Date(r.submitted_at).toLocaleDateString('en-GB', { timeZone: 'UTC' }) : '-' }}</td>
               <td class="px-3 py-2">
                 <span
@@ -170,8 +170,8 @@ function sortBy(column: 'id' | 'title' | 'budget' | 'submitted_at' | 'status') {
               <td class="px-3 py-2">
                 <template v-if="r.status === 'Pending'">
                   <textarea
-                    v-model="state.comments[r.id]"
-                    placeholder="add comment (optional)"
+                    v-model="state.remarks[r.id]"
+                    placeholder="add remarks (optional)"
                     class="mt-1 block w-64 rounded-md border p-2"
                     rows="2"
                     @focus="state.actingId = r.id"

@@ -9,7 +9,7 @@ const props = defineProps<{
     budget: number | string
     purchase_ref_no?: string | null
     items: Array<{ item_no: number; details: string; purpose?: string | null; quantity: number; price: number | string }>
-    purpose: string | null
+    note: string | null
     status: 'Pending' | 'Approved' | 'Rejected' | string
     submitted_at: string | null
     approval_remarks: string | null
@@ -43,11 +43,11 @@ function badgeClasses(status: string) {
       <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
         <div class="space-y-3">
           <div>
-            <div class="text-sm text-muted-foreground">Reference</div>
+            <div class="text-sm text-muted-foreground">Reference ID</div>
             <div class="font-mono">#{{ props.request.id }}</div>
           </div>
           <div>
-            <div class="text-sm text-muted-foreground">Employee</div>
+            <div class="text-sm text-muted-foreground">Applicant's Name</div>
             <div>{{ props.request.user.name }} <span class="text-muted-foreground">({{ props.request.user.email }})</span></div>
           </div>
           <div>
@@ -56,10 +56,10 @@ function badgeClasses(status: string) {
           </div>
           <div>
             <div class="text-sm text-muted-foreground">Budget</div>
-            <div>{{ 'RM' + Number(props.request.budget).toLocaleString('en-MY', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }}</div>
+            <div>{{ 'RM ' + Number(props.request.budget).toLocaleString('en-MY', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }}</div>
           </div>
           <div v-if="props.request.purchase_ref_no">
-            <div class="text-sm text-muted-foreground">Ref No</div>
+            <div class="text-sm text-muted-foreground">Purchase Ref No</div>
             <div class="font-mono">{{ props.request.purchase_ref_no }}</div>
           </div>
         </div>
@@ -84,8 +84,8 @@ function badgeClasses(status: string) {
       </div>
 
       <div class="mt-6">
-        <div class="text-sm text-muted-foreground">Purpose</div>
-        <div class="whitespace-pre-wrap">{{ props.request.purpose || '-' }}</div>
+        <div class="text-sm text-muted-foreground">Notes</div>
+        <div class="whitespace-pre-wrap">{{ props.request.note || '-' }}</div>
       </div>
 
       <div class="mt-6">
