@@ -44,8 +44,7 @@ class UserFactory extends Factory
             'two_factor_secret' => Str::random(10),
             'two_factor_recovery_codes' => Str::random(10),
             'two_factor_confirmed_at' => now(),
-            // Newly added columns in users table
-            'staffid' => $this->generateStaffId(),
+            'staff_id' => $this->generateStaffId(),
             'location_iso_code' => $locationIso,
         ];
     }

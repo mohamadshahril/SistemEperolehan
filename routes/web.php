@@ -10,6 +10,7 @@ use App\Http\Controllers\LocationController;
 use App\Http\Controllers\VotController;
 use App\Http\Controllers\FileReferenceController;
 use App\Http\Controllers\TypeProcurementController;
+use App\Http\Controllers\ItemUnitController;
 
 Route::get('/', function () {
     return Inertia::render('Welcome', [
@@ -48,6 +49,9 @@ Route::middleware(['auth','verified'])->group(function () {
 
     // Type Procurements CRUD
     Route::resource('type-procurements', TypeProcurementController::class);
+
+    // Item Units CRUD
+    Route::resource('item-units', ItemUnitController::class);
 
     // Approvals Module (Managers)
     Route::get('approvals', [PurchaseRequestController::class, 'approvalsIndex'])->name('approvals.index');

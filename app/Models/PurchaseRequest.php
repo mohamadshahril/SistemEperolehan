@@ -14,21 +14,15 @@ class PurchaseRequest extends Model
 
     protected $fillable = [
         'user_id',
+        'applicant_id',
         'title',
         'type_procurement_id',
         'file_reference_id',
         'vot_id',
         'location_iso_code',
         'budget',
-        // store notes in DB (formerly `purpose`)
-        'notes',
-        // keep virtual legacy name fillable for mass assignment
-        'purpose',
-        'items',
-        // store status by id
+        'note',
         'status_id',
-        // keep virtual status (name) fillable for backward compatibility via mutator
-        'status',
         'submitted_at',
         'attachment_path',
         'purchase_ref_no',
@@ -37,21 +31,24 @@ class PurchaseRequest extends Model
         'approved_at',
     ];
 
-    /**
-     * Ensure the virtual status (name) is included when serializing the model.
-     */
-    protected $appends = ['status', 'purpose'];
 
     protected $casts = [
         'submitted_at' => 'datetime',
         'approved_at' => 'datetime',
         'budget' => 'decimal:2',
-        'items' => 'array',
     ];
 
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
+    }
+
+    /**
+     * Applicant user who submitted the purchase request.
+     */
+    public function applicant(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'applicant_id');
     }
 
     public function fileReference(): BelongsTo
@@ -74,25 +71,33 @@ class PurchaseRequest extends Model
         return $this->belongsTo(Status::class, 'status_id');
     }
 
+    public function items()
+    {
+        // A purchase request has many purchase items via purchase_items.purchase_request_id
+        return $this->hasMany(PurchaseItem::class, 'purchase_request_id', 'id');
+    }
+
+
+
     /**
-     * Backward-compat: expose `purpose` while storing in `notes` column.
+     * Backward-compat: expose `purpose` while storing in `note` column.
      */
     public function getPurposeAttribute(): ?string
     {
         // Prefer attribute if already set on the model instance
-        if (array_key_exists('notes', $this->attributes)) {
-            return $this->attributes['notes'] ?? null;
+        if (array_key_exists('note', $this->attributes)) {
+            return $this->attributes['note'] ?? null;
         }
         // Fallback to attribute accessor
-        return $this->getAttribute('notes');
+        return $this->getAttribute('note');
     }
 
     /**
-     * Backward-compat: allow setting `purpose` which writes into `notes`.
+     * Backward-compat: allow setting `purpose` which writes into `note`.
      */
     public function setPurposeAttribute($value): void
     {
-        $this->attributes['notes'] = $value;
+        $this->attributes['note'] = $value;
     }
 
     /**

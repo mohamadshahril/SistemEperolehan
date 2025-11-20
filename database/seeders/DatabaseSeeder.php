@@ -22,13 +22,15 @@ class DatabaseSeeder extends Seeder
         ]);
 
         // 2) Users (after locations to allow factory to set location_iso_code)
-        $users = User::factory(5)->create();
+        $users = User::factory(10)->create();
 
         // 3) Business data depending on reference data and users
         $this->call([
             PurchaseOrdersSeeder::class, // depends on vendors
             UserLocationsSeeder::class,  // depends on users + locations
             PurchaseRequestsSeeder::class, // generate purchase requests with codes
+            PurchaseItemSeeder::class,
+
         ]);
 
         // 4) Example alternative seeding strategies can be added here if needed

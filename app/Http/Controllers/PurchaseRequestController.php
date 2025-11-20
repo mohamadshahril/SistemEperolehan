@@ -36,11 +36,11 @@ class PurchaseRequestController extends Controller
             ->where('user_id', $user->id)
             ->with(['statusRef:id,name']);
 
-        // Search by title, notes (formerly purpose), ID, purchase_ref_no, or date (submitted_at)
+        // Search by title, note (formerly purpose), ID, purchase_ref_no, or date (submitted_at)
         if ($search = $request->string('search')->toString()) {
             $query->where(function ($q) use ($search) {
                 $q->where('title', 'like', "%{$search}%")
-                    ->orWhere('notes', 'like', "%{$search}%")
+                    ->orWhere('note', 'like', "%{$search}%")
                     ->orWhere('id', $search)
                     ->orWhere('purchase_ref_no', 'like', "%{$search}%")
                     ->orWhereDate('submitted_at', $search);
@@ -293,34 +293,34 @@ class PurchaseRequestController extends Controller
             'file_reference_id' => ['required', 'integer', 'exists:file_references,id'],
             'vot_id' => ['required', 'integer', 'exists:vots,id'],
             'budget' => ['required', 'numeric', 'min:0'],
-            // Canonical field is `notes`; accept legacy `purpose` for backward compatibility
-            'notes' => ['nullable', 'string', 'max:1000'],
+            // Canonical field is `note`; accept legacy `purpose` for backward compatibility
+            'note' => ['nullable', 'string', 'max:1000'],
             'purpose' => ['nullable', 'string', 'max:1000'],
-            'items' => ['required', 'array', 'min:1'],
-            'items.*.item_no' => ['required', 'integer', 'min:1'],
-            'items.*.details' => ['required', 'string', 'max:500'],
-            'items.*.purpose' => ['nullable', 'string', 'max:500'],
-            'items.*.quantity' => ['required', 'integer', 'min:1'],
-            'items.*.price' => ['required', 'numeric', 'min:0'],
+            'item' => ['required', 'array', 'min:1'],
+            'item.*.item_no' => ['required', 'integer', 'min:1'],
+            'item.*.details' => ['required', 'string', 'max:500'],
+            'item.*.purpose' => ['nullable', 'string', 'max:500'],
+            'item.*.quantity' => ['required', 'integer', 'min:1'],
+            'item.*.price' => ['required', 'numeric', 'min:0'],
             'attachment' => ['nullable', 'file', 'mimes:pdf,jpg,jpeg,png,doc,docx,xls,xlsx', 'max:5120'],
         ]);
 
         // Enforce per-item price must not exceed the budget
-        foreach ($validated['items'] as $idx => $item) {
+        foreach ($validated['item'] as $idx => $item) {
             if ((float)$item['price'] > (float)$validated['budget']) {
-                return back()->withErrors(["items.$idx.price" => 'Item price must not exceed the budget.'])->withInput();
+                return back()->withErrors(["item.$idx.price" => 'Item price must not exceed the budget.'])->withInput();
             }
         }
 
         // Enforce total cost must not exceed the budget
         $total = 0.0;
-        foreach ($validated['items'] as $item) {
+        foreach ($validated['item'] as $item) {
             $qty = (int)$item['quantity'];
             $price = (float)$item['price'];
             $total += $qty * $price;
         }
         if ($total > (float)$validated['budget']) {
-            return back()->withErrors(['budget' => 'Total items cost (RM ' . number_format($total, 2) . ') must not exceed the budget.'])->withInput();
+            return back()->withErrors(['budget' => 'Total item cost (RM ' . number_format($total, 2) . ') must not exceed the budget.'])->withInput();
         }
 
         $path = null;
@@ -329,26 +329,43 @@ class PurchaseRequestController extends Controller
         }
 
         $user = $request->user();
-        $purchaseRequest = new PurchaseRequest();
-        $purchaseRequest->user_id = $user->id;
-        $purchaseRequest->title = $validated['title'];
-        $purchaseRequest->type_procurement_id = $validated['type_procurement_id'];
-        $purchaseRequest->file_reference_id = $validated['file_reference_id'];
-        $purchaseRequest->vot_id = $validated['vot_id'];
-        $purchaseRequest->location_iso_code = $user->location_iso_code ?? '';
-        $purchaseRequest->budget = $validated['budget'];
-        // Normalize notes: prefer `notes`, fallback to legacy `purpose`
-        $normalizedNotes = $validated['notes'] ?? $validated['purpose'] ?? null;
-        $purchaseRequest->notes = $normalizedNotes;
-        $purchaseRequest->items = $validated['items'];
-        $purchaseRequest->status = 'Pending';
-        $purchaseRequest->submitted_at = now();
-        $purchaseRequest->attachment_path = $path;
-        $purchaseRequest->save();
 
-        // Generate purchase reference no after we have an ID
-        $purchaseRequest->purchase_ref_no = $this->generatePurchaseRefNo($purchaseRequest);
-        $purchaseRequest->save();
+        DB::transaction(function () use ($validated, $user, $path, &$purchaseRequest) {
+            $purchaseRequest = new PurchaseRequest();
+            $purchaseRequest->user_id = $user->id;
+            // If applicant is always the current user at creation time
+            $purchaseRequest->applicant_id = $user->id;
+            $purchaseRequest->title = $validated['title'];
+            $purchaseRequest->type_procurement_id = $validated['type_procurement_id'];
+            $purchaseRequest->file_reference_id = $validated['file_reference_id'];
+            $purchaseRequest->vot_id = $validated['vot_id'];
+            $purchaseRequest->location_iso_code = $user->location_iso_code ?? '';
+            $purchaseRequest->budget = $validated['budget'];
+            // Normalize note: prefer `note`, fallback to legacy `purpose`
+            $normalizedNotes = $validated['note'] ?? $validated['purpose'] ?? null;
+            $purchaseRequest->note = $normalizedNotes;
+            $purchaseRequest->status = 'Pending';
+            $purchaseRequest->submitted_at = now();
+            $purchaseRequest->attachment_path = $path;
+            $purchaseRequest->save();
+
+            // Persist related items into purchase_items table
+            foreach ($validated['item'] as $row) {
+                $purchaseRequest->items()->create([
+                    'item_name'   => $row['details'],
+                    'item_code'   => $row['item_code'] ?? null,
+                    'purpose'     => $row['purpose'] ?? null,
+                    'unit'        => $row['unit'] ?? null,
+                    'quantity'    => $row['quantity'],
+                    'unit_price'  => $row['price'],
+                    'total_price' => ($row['quantity'] ?? 0) * ($row['price'] ?? 0),
+                ]);
+            }
+
+            // Generate purchase reference no after we have an ID
+            $purchaseRequest->purchase_ref_no = $this->generatePurchaseRefNo($purchaseRequest);
+            $purchaseRequest->save();
+        });
 
         return redirect()
             ->route('purchase-requests.index')
@@ -382,9 +399,31 @@ class PurchaseRequestController extends Controller
                 'vot_id' => $purchaseRequest->vot_id,
                 'location_iso_code' => $purchaseRequest->location_iso_code,
                 'budget' => $purchaseRequest->budget,
-                'items' => $purchaseRequest->items,
-                // Expose both for a transitional period; frontend can migrate to `notes`
-                'notes' => $purchaseRequest->notes,
+                // Provide items from relation in both legacy and new shapes
+                'item' => $purchaseRequest->items()->get()->map(function ($it) {
+                    return [
+                        'item_no' => null, // UI can compute index
+                        'details' => $it->item_name,
+                        'purpose' => $it->purpose,
+                        'quantity' => $it->quantity,
+                        'price' => $it->unit_price,
+                        'item_code' => $it->item_code,
+                        'unit' => $it->unit,
+                    ];
+                }),
+                'items' => $purchaseRequest->items()->get()->map(function ($it) {
+                    return [
+                        'item_no' => null,
+                        'details' => $it->item_name,
+                        'purpose' => $it->purpose,
+                        'quantity' => $it->quantity,
+                        'price' => $it->unit_price,
+                        'item_code' => $it->item_code,
+                        'unit' => $it->unit,
+                    ];
+                }),
+                // Expose both for a transitional period; frontend can migrate to `note`
+                'note' => $purchaseRequest->note,
                 'purpose' => $purchaseRequest->purpose,
                 'status' => $purchaseRequest->status,
                 'submitted_at' => $purchaseRequest->submitted_at,
@@ -418,8 +457,29 @@ class PurchaseRequestController extends Controller
                 'vot_id' => $purchaseRequest->vot_id,
                 'location_iso_code' => $purchaseRequest->location_iso_code,
                 'budget' => $purchaseRequest->budget,
-                'items' => $purchaseRequest->items,
-                'notes' => $purchaseRequest->notes,
+                'item' => $purchaseRequest->items()->get()->map(function ($it) {
+                    return [
+                        'item_no' => null,
+                        'details' => $it->item_name,
+                        'purpose' => $it->purpose,
+                        'quantity' => $it->quantity,
+                        'price' => $it->unit_price,
+                        'item_code' => $it->item_code,
+                        'unit' => $it->unit,
+                    ];
+                }),
+                'items' => $purchaseRequest->items()->get()->map(function ($it) {
+                    return [
+                        'item_no' => null,
+                        'details' => $it->item_name,
+                        'purpose' => $it->purpose,
+                        'quantity' => $it->quantity,
+                        'price' => $it->unit_price,
+                        'item_code' => $it->item_code,
+                        'unit' => $it->unit,
+                    ];
+                }),
+                'note' => $purchaseRequest->note,
                 'purpose' => $purchaseRequest->purpose,
                 'status' => $purchaseRequest->status,
                 'submitted_at' => $purchaseRequest->submitted_at,
@@ -445,52 +505,62 @@ class PurchaseRequestController extends Controller
             'file_reference_id' => ['required', 'integer', 'exists:file_references,id'],
             'vot_id' => ['required', 'integer', 'exists:vots,id'],
             'budget' => ['required', 'numeric', 'min:0'],
-            // Accept canonical `notes` and legacy `purpose`
-            'notes' => ['nullable', 'string', 'max:1000'],
+            'note' => ['nullable', 'string', 'max:1000'],
             'purpose' => ['nullable', 'string', 'max:1000'],
-            'items' => ['required', 'array', 'min:1'],
-            'items.*.item_no' => ['required', 'integer', 'min:1'],
-            'items.*.details' => ['required', 'string', 'max:500'],
-            'items.*.purpose' => ['nullable', 'string', 'max:500'],
-            'items.*.quantity' => ['required', 'integer', 'min:1'],
-            'items.*.price' => ['required', 'numeric', 'min:0'],
+            'item' => ['required', 'array', 'min:1'],
+            'item.*.price' => ['required', 'numeric', 'min:0'],
             'attachment' => ['nullable', 'file', 'mimes:pdf,jpg,jpeg,png,doc,docx,xls,xlsx', 'max:5120'],
         ]);
 
-        foreach ($validated['items'] as $idx => $item) {
+        foreach ($validated['item'] as $idx => $item) {
             if ((float)$item['price'] > (float)$validated['budget']) {
-                return back()->withErrors(["items.$idx.price" => 'Item price must not exceed the budget.'])->withInput();
+                return back()->withErrors(["item.$idx.price" => 'Item price must not exceed the budget.'])->withInput();
             }
         }
 
         // Enforce total cost must not exceed the budget
         $total = 0.0;
-        foreach ($validated['items'] as $item) {
+        foreach ($validated['item'] as $item) {
             $qty = (int)$item['quantity'];
             $price = (float)$item['price'];
             $total += $qty * $price;
         }
         if ($total > (float)$validated['budget']) {
-            return back()->withErrors(['budget' => 'Total items cost (RM ' . number_format($total, 2) . ') must not exceed the budget.'])->withInput();
+            return back()->withErrors(['budget' => 'Total item cost (RM ' . number_format($total, 2) . ') must not exceed the budget.'])->withInput();
         }
 
-        // Handle optional attachment replacement
-        if ($request->hasFile('attachment')) {
-            if ($purchaseRequest->attachment_path && Storage::disk('public')->exists($purchaseRequest->attachment_path)) {
-                Storage::disk('public')->delete($purchaseRequest->attachment_path);
+        DB::transaction(function () use ($request, $purchaseRequest, $validated) {
+            // Handle optional attachment replacement
+            if ($request->hasFile('attachment')) {
+                if ($purchaseRequest->attachment_path && Storage::disk('public')->exists($purchaseRequest->attachment_path)) {
+                    Storage::disk('public')->delete($purchaseRequest->attachment_path);
+                }
+                $purchaseRequest->attachment_path = $request->file('attachment')->store('purchase_requests', 'public');
             }
-            $purchaseRequest->attachment_path = $request->file('attachment')->store('purchase_requests', 'public');
-        }
 
-        $purchaseRequest->title = $validated['title'];
-        $purchaseRequest->type_procurement_id = $validated['type_procurement_id'];
-        $purchaseRequest->file_reference_id = $validated['file_reference_id'];
-        $purchaseRequest->vot_id = $validated['vot_id'];
-        $purchaseRequest->budget = $validated['budget'];
-        $normalizedNotes = $validated['notes'] ?? $validated['purpose'] ?? null;
-        $purchaseRequest->notes = $normalizedNotes;
-        $purchaseRequest->items = $validated['items'];
-        $purchaseRequest->save();
+            $purchaseRequest->title = $validated['title'];
+            $purchaseRequest->type_procurement_id = $validated['type_procurement_id'];
+            $purchaseRequest->file_reference_id = $validated['file_reference_id'];
+            $purchaseRequest->vot_id = $validated['vot_id'];
+            $purchaseRequest->budget = $validated['budget'];
+            $normalizedNotes = $validated['note'] ?? $validated['purpose'] ?? null;
+            $purchaseRequest->note = $normalizedNotes;
+            $purchaseRequest->save();
+
+            // Sync items: simple strategy delete then recreate
+            $purchaseRequest->items()->delete();
+            foreach ($validated['item'] as $row) {
+                $purchaseRequest->items()->create([
+                    'item_name'   => $row['details'],
+                    'item_code'   => $row['item_code'] ?? null,
+                    'purpose'     => $row['purpose'] ?? null,
+                    'unit'        => $row['unit'] ?? null,
+                    'quantity'    => $row['quantity'],
+                    'unit_price'  => $row['price'],
+                    'total_price' => ($row['quantity'] ?? 0) * ($row['price'] ?? 0),
+                ]);
+            }
+        });
 
         return redirect()
             ->route('purchase-requests.index')

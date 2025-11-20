@@ -33,27 +33,27 @@ class UserLocationsSeeder extends Seeder
             $iso = $locations[$idx % $totalLoc];
             $idx++;
 
-            // Ensure each user has a staffid; if missing, generate one and persist
-            $staffid = $user->staffid;
-            if (empty($staffid)) {
-                $staffid = $this->generateStaffId();
-                // Persist generated staffid and optionally sync location_iso_code
-                $user->staffid = $staffid;
+            // Ensure each user has a staff_id; if missing, generate one and persist
+            $staff = $user->staff_id;
+            if (empty($staff)) {
+                $staff = $this->generateStaffId();
+                // Persist generated staff_id and optionally sync location_iso_code
+                $user->staff_id = $staff;
                 if (empty($user->location_iso_code)) {
                     $user->location_iso_code = $iso;
                 }
                 $user->save();
             } else {
-                // If user already has staffid but no location, set it for consistency
+                // If user already has staff_id but no location, set it for consistency
                 if (empty($user->location_iso_code)) {
                     $user->location_iso_code = $iso;
                     $user->save();
                 }
             }
 
-            // Upsert by staff_id using users.staffid
+            // Upsert by staff_id using users.staff_id
             DB::table('user_locations')->updateOrInsert(
-                ['staff_id' => $staffid],
+                ['staff_id' => $staff],
                 [
                     'location_iso_code' => $iso,
                     'updated_at' => now(),

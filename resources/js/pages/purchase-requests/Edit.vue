@@ -14,7 +14,10 @@ const props = defineProps<{
     vot_id: number | string
     location_iso_code?: string | null
     budget: number | string
-    items: Item[]
+    // Support both keys from backend; controller currently sends both
+    item?: Item[]
+    items?: Item[]
+    note?: string | null
     notes?: string | null
     purpose?: string | null
     status: string
@@ -37,9 +40,15 @@ const form = useForm({
   file_reference_id: props.request.file_reference_id ?? ('' as any),
   vot_id: props.request.vot_id ?? ('' as any),
   budget: props.request.budget ?? ('' as any),
-  items: (props.request.items && props.request.items.length > 0 ? props.request.items : [{ item_no: 1, details: '', purpose: '', quantity: 1, price: '' }]) as Item[],
-  // UI field `note` maps to backend `notes`
-  note: (props.request.notes ?? props.request.purpose ?? '') as string,
+  // Use `item` key to align with backend validation; fallback to legacy `items`
+  item: ((props.request.item && props.request.item.length > 0)
+    ? props.request.item
+    : (props.request.items && props.request.items.length > 0)
+      ? props.request.items
+      : [{ item_no: 1, details: '', purpose: '', quantity: 1, price: '' }]
+  ) as Item[],
+  // Canonical is `note`; fallback to legacy `notes` or `purpose`
+  note: (props.request.note ?? props.request.notes ?? props.request.purpose ?? '') as string,
   attachment: null as File | null,
 })
 
@@ -52,7 +61,7 @@ form.transform((data: any) => {
     vot_id: Number(data.vot_id || 0) || data.vot_id,
     budget: Number(data.budget ?? 0),
     // Normalize item fields
-    items: (Array.isArray(data.items) ? data.items : []).map((it: any, i: number) => ({
+    item: (Array.isArray(data.item) ? data.item : []).map((it: any, i: number) => ({
       item_no: Number(it.item_no ?? i + 1),
       details: (it.details ?? '').toString(),
       purpose: (it.purpose ?? '').toString(),
@@ -61,9 +70,7 @@ form.transform((data: any) => {
     })),
     _method: 'PUT',
   }
-  // Map UI `note` to backend `notes`
-  payload.notes = data.note
-  delete payload.note
+  // Keep canonical `note` key; backend expects `note`
   if (!(data.attachment instanceof File)) {
     delete payload.attachment
   }
@@ -125,14 +132,14 @@ onMounted(() => {
 })
 
 function addItem() {
-  const nextNo = (form.items?.length || 0) + 1
-  form.items.push({ item_no: nextNo, details: '', purpose: '', quantity: 1, price: '' })
+  const nextNo = (form.item?.length || 0) + 1
+  form.item.push({ item_no: nextNo, details: '', purpose: '', quantity: 1, price: '' })
 }
 
 function removeItem(index: number) {
-  if (form.items.length <= 1) return
-  form.items.splice(index, 1)
-  form.items.forEach((it, i) => (it.item_no = i + 1))
+  if (form.item.length <= 1) return
+  form.item.splice(index, 1)
+  form.item.forEach((it, i) => (it.item_no = i + 1))
 }
 
 function onFileChange(e: Event) {
@@ -191,7 +198,7 @@ function destroyRequest() {
           <div v-if="props.request.purpose"><span class="font-medium">Purpose:</span> {{ props.request.purpose }}</div>
           <div><span class="font-medium">Items:</span>
             <ul class="list-disc ml-6">
-              <li v-for="(it, idx) in props.request.items" :key="idx">
+              <li v-for="(it, idx) in (props.request.item ?? props.request.items ?? [])" :key="idx">
                 {{ it.item_no }}. {{ it.details }} — Qty: {{ it.quantity }}, Price: {{ 'RM' + Number(it.price).toLocaleString('en-MY', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }}
                 <template v-if="it.purpose"> ({{ it.purpose }})</template>
               </li>
@@ -284,26 +291,26 @@ function destroyRequest() {
                 </tr>
               </thead>
               <tbody>
-                <tr v-for="(it, idx) in form.items" :key="idx" class="odd:bg-white even:bg-muted/10">
+                <tr v-for="(it, idx) in form.item" :key="idx" class="odd:bg-white even:bg-muted/10">
                   <td class="px-2 py-2 w-12">{{ idx + 1 }}</td>
                   <td class="px-2 py-2">
                     <input v-model="it.details" type="text" class="block w-full rounded-md border p-2" :disabled="!props.canEdit" />
-                    <div v-if="form.errors[`items.${idx}.details`]" class="mt-1 text-xs text-red-600">{{ (form.errors as any)[`items.${idx}.details`] }}</div>
+                    <div v-if="form.errors[`item.${idx}.details`]" class="mt-1 text-xs text-red-600">{{ (form.errors as any)[`item.${idx}.details`] }}</div>
                   </td>
                   <td class="px-2 py-2">
                     <input v-model="it.purpose" type="text" class="block w-full rounded-md border p-2" :disabled="!props.canEdit" />
-                    <div v-if="form.errors[`items.${idx}.purpose`]" class="mt-1 text-xs text-red-600">{{ (form.errors as any)[`items.${idx}.purpose`] }}</div>
+                    <div v-if="form.errors[`item.${idx}.purpose`]" class="mt-1 text-xs text-red-600">{{ (form.errors as any)[`item.${idx}.purpose`] }}</div>
                   </td>
                   <td class="px-2 py-2 w-24">
                     <input v-model.number="it.quantity" type="number" min="1" class="block w-full rounded-md border p-2" :disabled="!props.canEdit" />
-                    <div v-if="form.errors[`items.${idx}.quantity`]" class="mt-1 text-xs text-red-600">{{ (form.errors as any)[`items.${idx}.quantity`] }}</div>
+                    <div v-if="form.errors[`item.${idx}.quantity`]" class="mt-1 text-xs text-red-600">{{ (form.errors as any)[`item.${idx}.quantity`] }}</div>
                   </td>
                   <td class="px-2 py-2 w-40">
                     <input v-model="it.price" type="number" min="0" step="0.01" class="block w-full rounded-md border p-2" :disabled="!props.canEdit" />
-                    <div v-if="form.errors[`items.${idx}.price`]" class="mt-1 text-xs text-red-600">{{ (form.errors as any)[`items.${idx}.price`] }}</div>
+                    <div v-if="form.errors[`item.${idx}.price`]" class="mt-1 text-xs text-red-600">{{ (form.errors as any)[`item.${idx}.price`] }}</div>
                   </td>
                   <td class="px-2 py-2 w-20 text-right">
-                    <button type="button" @click="removeItem(idx)" class="text-sm text-red-600" :disabled="form.items.length <= 1 || !props.canEdit">Remove</button>
+                    <button type="button" @click="removeItem(idx)" class="text-sm text-red-600" :disabled="form.item.length <= 1 || !props.canEdit">Remove</button>
                   </td>
                 </tr>
               </tbody>
