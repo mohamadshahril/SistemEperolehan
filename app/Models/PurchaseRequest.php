@@ -78,10 +78,27 @@ class PurchaseRequest extends Model
         return $this->belongsTo(Status::class, 'status_id');
     }
 
+    /**
+     * Approver user relation (who approved/rejected the request).
+     */
+    public function approvedBy(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'approved_by');
+    }
+
     public function items()
     {
         // A purchase request has many purchase items via purchase_items.purchase_request_id
         return $this->hasMany(PurchaseItem::class, 'purchase_request_id', 'id');
+    }
+
+    /**
+     * Optional alias to access the Status relation using a shorter name.
+     * Keeps backward-compat with any code expecting `status()` relation.
+     */
+    public function status(): BelongsTo
+    {
+        return $this->statusRef();
     }
 
 

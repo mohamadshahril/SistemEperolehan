@@ -13,7 +13,8 @@ return new class extends Migration
     {
         Schema::create('type_procurements', function (Blueprint $table) {
             $table->id();
-            $table->integer('procurement_code')->unique();
+            // Use string for alphanumeric codes like TP01
+            $table->string('procurement_code', 20)->unique();
             $table->string('procurement_description',100);
             $table->tinyInteger('status')->default(1)->comment('1 = active, 2 = inactive');
             $table->timestamps();

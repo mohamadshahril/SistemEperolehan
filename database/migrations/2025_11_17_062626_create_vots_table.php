@@ -13,7 +13,8 @@ return new class extends Migration
     {
         Schema::create('vots', function (Blueprint $table) {
             $table->id();
-            $table->integer('vot_code')->unique();
+            // Use string for alphanumeric codes like V01
+            $table->string('vot_code', 20)->unique();
             $table->string('vot_description',100);
             $table->tinyInteger('status')->default(1)->comment('1 = active, 2 = inactive');
             $table->timestamps();

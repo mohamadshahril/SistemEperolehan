@@ -16,7 +16,8 @@ class TypeProcurement extends Model
     ];
 
     protected $casts = [
-        'procurement_code' => 'integer',
+        // procurement_code is alphanumeric (e.g., TP01)
+        'procurement_code' => 'string',
         'status' => 'integer',
     ];
 }

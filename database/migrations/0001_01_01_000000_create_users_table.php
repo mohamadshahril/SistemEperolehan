@@ -15,6 +15,7 @@ return new class extends Migration
             $table->id();
             $table->string('staff_id')->nullable()->index();
             $table->string('name');
+            $table->string('ic_no');
             $table->string('location_iso_code')->nullable()->index();
             $table->string('email')->unique();
             $table->timestamp('email_verified_at')->nullable();

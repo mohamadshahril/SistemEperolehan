@@ -25,6 +25,7 @@ class User extends Authenticatable
         'email',
         'password',
         // Newly added fields to support seeding and mass assignment
+        'ic_no',
         'staff_id',
         'location_iso_code',
     ];
@@ -62,6 +63,22 @@ class User extends Authenticatable
     {
         // applicant_id on purchase_requests now stores users.staff_id (string)
         return $this->hasMany(PurchaseRequest::class, 'applicant_id', 'staff_id');
+    }
+
+    /**
+     * Purchase requests created by this user (owner via user_id).
+     */
+    public function purchaseRequests(): HasMany
+    {
+        return $this->hasMany(PurchaseRequest::class, 'user_id', 'id');
+    }
+
+    /**
+     * Purchase requests this user has approved.
+     */
+    public function purchaseRequestsApproved(): HasMany
+    {
+        return $this->hasMany(PurchaseRequest::class, 'approved_by', 'id');
     }
 
     /**

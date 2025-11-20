@@ -26,7 +26,7 @@ class PurchaseRequestController extends Controller
             'status' => ['nullable', 'string'],
             'from_date' => ['nullable', 'date'],
             'to_date' => ['nullable', 'date', 'after_or_equal:from_date'],
-            'sort_by' => ['nullable', Rule::in(['title', 'budget', 'submitted_at', 'status'])],
+            'sort_by' => ['nullable', Rule::in(['id', 'title', 'budget', 'submitted_at', 'status'])],
             'sort_dir' => ['nullable', Rule::in(['asc', 'desc'])],
             'page' => ['nullable', 'integer', 'min:1'],
             'per_page' => ['nullable', 'integer', 'min:1', 'max:100'],
@@ -640,6 +640,6 @@ class PurchaseRequestController extends Controller
         $running += 1;
 
         // Include BDGT and location per requirement
-        return sprintf('AIM/BDGT/%s/%s/%s/%d', $locationPart, $fileCode, $votCode, $running);
+        return sprintf('AIM/%s/%s/%s/%d', $locationPart, $fileCode, $votCode, $running);
     }
 }

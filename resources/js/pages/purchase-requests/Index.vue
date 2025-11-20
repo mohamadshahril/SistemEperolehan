@@ -97,11 +97,7 @@ function statusClass(status: string | undefined | null): string {
   return 'bg-gray-100 text-gray-800 border border-gray-200'
 }
 
-// Compute display row number accounting for pagination
-function rowNumber(index: number): number {
-  const from = props.requests.meta?.from ?? (((props.requests.meta?.current_page ?? 1) - 1) * (props.requests.meta?.per_page ?? state.per_page) + 1)
-  return from + index
-}
+// Note: previously showed row number; requirement changed to show ID directly.
 
 function destroyRequest(id: number) {
   if (!confirm('Delete this purchase request? This action cannot be undone.')) return
@@ -165,7 +161,7 @@ function destroyRequest(id: number) {
         <table class="min-w-full divide-y">
           <thead class="bg-muted/30">
             <tr>
-              <th class="px-4 py-2 text-left text-sm font-medium"><button @click="sortBy('id')" class="hover:underline">#</button></th>
+              <th class="px-4 py-2 text-left text-sm font-medium"><button @click="sortBy('id')" class="hover:underline">ID</button></th>
               <th class="px-4 py-2 text-left text-sm font-medium"><button @click="sortBy('title')" class="hover:underline">Title</button></th>
               <th class="px-4 py-2 text-left text-sm font-medium"><button @click="sortBy('submitted_at')" class="hover:underline">Submitted</button></th>
               <th class="px-4 py-2 text-left text-sm font-medium"><button @click="sortBy('status')" class="hover:underline">Status</button></th>
@@ -175,8 +171,8 @@ function destroyRequest(id: number) {
             </tr>
           </thead>
           <tbody>
-            <tr v-for="(req, i) in props.requests.data" :key="req.id" class="odd:bg-white even:bg-muted/10">
-              <td class="px-4 py-2">{{ rowNumber(i) }}</td>
+            <tr v-for="req in props.requests.data" :key="req.id" class="odd:bg-white even:bg-muted/10">
+              <td class="px-4 py-2">{{ req.id }}</td>
               <td class="px-4 py-2">
                 <div class="font-medium">{{ req.title }}</div>
                 <div class="text-xs text-muted-foreground" v-if="req.purchase_ref_no">Ref: {{ req.purchase_ref_no }}</div>

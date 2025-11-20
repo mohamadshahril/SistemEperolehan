@@ -5,6 +5,7 @@ namespace Database\Factories;
 use App\Models\PurchaseRequest;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
+use Illuminate\Support\Facades\DB;
 
 /**
  * @extends Factory<\App\Models\PurchaseRequest>
@@ -25,8 +26,21 @@ class PurchaseRequestFactory extends Factory
 
         return [
             'user_id' => User::factory(),
-            // applicant_id now stores staff_id (string)
-            'applicant_id' => function () {
+            // applicant_id now stores staff_id (string) — align with the same user when possible
+            'applicant_id' => function (array $attributes) {
+                try {
+                    $userId = $attributes['user_id'] ?? null;
+                    // When using factories, user_id should already be resolved to an integer here
+                    if (is_int($userId) && $userId > 0) {
+                        $staff = User::query()->where('id', $userId)->value('staff_id');
+                        if ($staff) {
+                            return $staff;
+                        }
+                    }
+                } catch (\Throwable $e) {
+                    // fall back to generating a user below
+                }
+                // Fallback: create a user to derive a valid staff_id
                 return User::factory()->create()->staff_id;
             },
             // Header fields (new schema)
@@ -34,7 +48,20 @@ class PurchaseRequestFactory extends Factory
             'type_procurement_id' => 1,
             'file_reference_id' => 1,
             'vot_id' => 1,
-            'location_iso_code' => $this->faker->countryCode(),
+            // Prefer an existing location ISO from the DB, otherwise a sensible default
+            'location_iso_code' => (function () {
+                try {
+                    if (DB::getSchemaBuilder()->hasTable('locations')) {
+                        $iso = DB::table('locations')->inRandomOrder()->value('location_iso_code');
+                        if ($iso) {
+                            return $iso;
+                        }
+                    }
+                } catch (\Throwable $e) {
+                    // ignore and use fallback below
+                }
+                return 'MY-01';
+            })(),
             'budget' => $this->faker->randomFloat(2, 100, 10000),
             // Canonical column is `note` (singular)
             'note' => $this->faker->optional()->sentence(12),
