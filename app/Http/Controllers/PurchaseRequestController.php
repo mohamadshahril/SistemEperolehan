@@ -47,9 +47,13 @@ class PurchaseRequestController extends Controller
             });
         }
 
-        // Filter by status (name -> id)
-        if ($statusName = $request->string('status')->toString()) {
-            $statusId = Status::query()->where('name', $statusName)->value('id');
+        // Filter by status (name -> id). Default to 'Pending' when not provided.
+        $effectiveStatus = $request->filled('status')
+            ? $request->string('status')->toString()
+            : 'Pending';
+
+        if ($effectiveStatus !== '') {
+            $statusId = Status::query()->where('name', $effectiveStatus)->value('id');
             if ($statusId) {
                 $query->where('status_id', $statusId);
             } else {
@@ -82,7 +86,8 @@ class PurchaseRequestController extends Controller
             'requests' => $requests,
             'filters' => [
                 'search' => $request->input('search'),
-                'status' => $request->input('status'),
+                // Reflect the effective status so UI shows default 'Pending' when not provided
+                'status' => $request->filled('status') ? $request->input('status') : 'Pending',
                 'from_date' => $request->input('from_date'),
                 'to_date' => $request->input('to_date'),
                 'sort_by' => $sortBy,
@@ -527,15 +532,27 @@ class PurchaseRequestController extends Controller
                 ->with('error', 'Only pending requests can be edited.');
         }
 
+        // Normalize payload: accept either `item` or `items` from the frontend
+        // Frontend Edit page may submit `items`, while Create uses `item`.
+        if (!$request->has('item') && $request->has('items')) {
+            $request->merge(['item' => $request->input('items')]);
+        }
+
         $validated = $request->validate([
             'title' => ['required', 'string', 'max:255'],
             'type_procurement_id' => ['required', 'integer', 'exists:type_procurements,id'],
             'file_reference_id' => ['required', 'integer', 'exists:file_references,id'],
             'vot_id' => ['required', 'integer', 'exists:vots,id'],
             'budget' => ['required', 'numeric', 'min:0'],
+            // Keep the same rules as store() for consistency
             'note' => ['nullable', 'string', 'max:1000'],
             'purpose' => ['nullable', 'string', 'max:1000'],
             'item' => ['required', 'array', 'min:1'],
+            'item.*.details' => ['required', 'string', 'max:500'],
+            'item.*.purpose' => ['nullable', 'string', 'max:500'],
+            'item.*.item_code' => ['nullable', 'string', 'max:100'],
+            'item.*.unit' => ['nullable', 'string', 'max:50'],
+            'item.*.quantity' => ['required', 'integer', 'min:1'],
             'item.*.price' => ['required', 'numeric', 'min:0'],
             'attachment' => ['nullable', 'file', 'mimes:pdf,jpg,jpeg,png,doc,docx,xls,xlsx', 'max:5120'],
         ]);
