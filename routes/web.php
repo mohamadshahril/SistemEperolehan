@@ -10,6 +10,7 @@ use App\Http\Controllers\LocationController;
 use App\Http\Controllers\VotController;
 use App\Http\Controllers\FileReferenceController;
 use App\Http\Controllers\TypeProcurementController;
+use App\Http\Controllers\ItemUnitController;
 
 Route::get('/', function () {
     return Inertia::render('Welcome', [
@@ -29,6 +30,9 @@ Route::middleware(['auth','verified'])->group(function () {
     Route::get('purchase-requests/{purchaseRequest}', [PurchaseRequestController::class, 'show'])->name('purchase-requests.show');
     Route::get('purchase-requests/{purchaseRequest}/edit', [PurchaseRequestController::class, 'edit'])->name('purchase-requests.edit');
     Route::put('purchase-requests/{purchaseRequest}', [PurchaseRequestController::class, 'update'])->name('purchase-requests.update');
+    // Backward compatibility: some clients submit POST to the update endpoint
+    // Accept POST and route it to the same controller method to avoid 405 errors
+    Route::post('purchase-requests/{purchaseRequest}', [PurchaseRequestController::class, 'update'])->name('purchase-requests.update.post');
     Route::delete('purchase-requests/{purchaseRequest}', [PurchaseRequestController::class, 'destroy'])->name('purchase-requests.destroy');
 
     // Vendors
@@ -48,6 +52,9 @@ Route::middleware(['auth','verified'])->group(function () {
 
     // Type Procurements CRUD
     Route::resource('type-procurements', TypeProcurementController::class);
+
+    // Item Units CRUD
+    Route::resource('item-units', ItemUnitController::class);
 
     // Approvals Module (Managers)
     Route::get('approvals', [PurchaseRequestController::class, 'approvalsIndex'])->name('approvals.index');

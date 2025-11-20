@@ -44,9 +44,11 @@ class UserFactory extends Factory
             'two_factor_secret' => Str::random(10),
             'two_factor_recovery_codes' => Str::random(10),
             'two_factor_confirmed_at' => now(),
-            // Newly added columns in users table
-            'staffid' => $this->generateStaffId(),
-            'location_iso_code' => $locationIso,
+            // Required by users table schema
+            'ic_no' => $this->generateIcNo(),
+            'staff_id' => $this->generateStaffId(),
+            // Use a sensible default if none could be determined
+            'location_iso_code' => $locationIso ?? 'MY-01',
         ];
     }
 
@@ -87,5 +89,13 @@ class UserFactory extends Factory
             default:
                 return 'c' . fake()->numberBetween(20000, 29999) . '_' . fake()->numberBetween(1, 9);
         }
+    }
+
+    /**
+     * Generate a Malaysian-style IC number (12 digits) or similar numeric string.
+     */
+    protected function generateIcNo(): string
+    {
+        return (string) fake()->numerify('############');
     }
 }

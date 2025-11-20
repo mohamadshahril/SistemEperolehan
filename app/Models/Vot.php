@@ -16,7 +16,8 @@ class Vot extends Model
     ];
 
     protected $casts = [
-        'vot_code' => 'integer',
+        // vot_code is alphanumeric (e.g., V01)
+        'vot_code' => 'string',
         'status' => 'integer',
     ];
 }

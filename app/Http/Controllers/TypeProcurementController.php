@@ -64,7 +64,8 @@ class TypeProcurementController extends Controller
     public function store(Request $request)
     {
         $data = $request->validate([
-            'procurement_code' => ['required','integer','unique:type_procurements,procurement_code'],
+            // Alphanumeric code like TP01
+            'procurement_code' => ['required','string','max:20','regex:/^[A-Za-z0-9_-]+$/','unique:type_procurements,procurement_code'],
             'procurement_description' => ['required','string','max:100'],
             'status' => ['nullable','integer', Rule::in([1,2])],
         ]);
@@ -86,7 +87,7 @@ class TypeProcurementController extends Controller
     public function update(Request $request, TypeProcurement $type_procurement)
     {
         $data = $request->validate([
-            'procurement_code' => ['required','integer', Rule::unique('type_procurements','procurement_code')->ignore($type_procurement->id)],
+            'procurement_code' => ['required','string','max:20','regex:/^[A-Za-z0-9_-]+$/', Rule::unique('type_procurements','procurement_code')->ignore($type_procurement->id)],
             'procurement_description' => ['required','string','max:100'],
             'status' => ['required','integer', Rule::in([1,2])],
         ]);

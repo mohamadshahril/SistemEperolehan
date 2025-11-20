@@ -11,12 +11,13 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('type_procurements', function (Blueprint $table) {
+        Schema::create('item_units', function (Blueprint $table) {
             $table->id();
-            // Use string for alphanumeric codes like TP01
-            $table->string('procurement_code', 20)->unique();
-            $table->string('procurement_description',100);
-            $table->tinyInteger('status')->default(1)->comment('1 = active, 2 = inactive');
+            $table->string('code')->unique();
+            $table->string('name');
+            $table->text('description')->nullable();
+            // 1 = Active, 2 = Inactive (align with Locations pattern)
+            $table->unsignedTinyInteger('status')->default(1);
             $table->timestamps();
             $table->softDeletes();
         });
@@ -27,6 +28,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('type_procurements');
+        Schema::dropIfExists('item_units');
     }
 };

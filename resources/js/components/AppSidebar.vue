@@ -71,6 +71,11 @@ const mainNavItems: NavItem[] = [
         href: '/type-procurements',
         icon: Settings,
     },
+    {
+        title: 'Item Units',
+        href: '/item-units',
+        icon: Settings,
+    },
 ];
 </script>
 

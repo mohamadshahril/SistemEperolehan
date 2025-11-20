@@ -64,7 +64,8 @@ class VotController extends Controller
     public function store(Request $request)
     {
         $data = $request->validate([
-            'vot_code' => ['required','integer','unique:vots,vot_code'],
+            // Alphanumeric code like V01
+            'vot_code' => ['required','string','max:20','regex:/^[A-Za-z0-9_-]+$/','unique:vots,vot_code'],
             'vot_description' => ['required','string','max:255'],
             'status' => ['nullable','integer', Rule::in([1,2])],
         ]);
@@ -86,7 +87,7 @@ class VotController extends Controller
     public function update(Request $request, Vot $vot)
     {
         $data = $request->validate([
-            'vot_code' => ['required','integer', Rule::unique('vots','vot_code')->ignore($vot->id)],
+            'vot_code' => ['required','string','max:20','regex:/^[A-Za-z0-9_-]+$/', Rule::unique('vots','vot_code')->ignore($vot->id)],
             'vot_description' => ['required','string','max:255'],
             'status' => ['required','integer', Rule::in([1,2])],
         ]);
