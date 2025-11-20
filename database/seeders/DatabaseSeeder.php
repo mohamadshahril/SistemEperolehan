@@ -3,7 +3,6 @@
 namespace Database\Seeders;
 
 use App\Models\User;
-use App\Models\PurchaseRequest;
 use Illuminate\Database\Seeder;
 
 class DatabaseSeeder extends Seeder
@@ -22,13 +21,16 @@ class DatabaseSeeder extends Seeder
         ]);
 
         // 2) Users (after locations to allow factory to set location_iso_code)
-        $users = User::factory(10)->create();
+        User::factory(5)->create();
 
         // 3) Business data depending on reference data and users
         $this->call([
-            PurchaseOrdersSeeder::class, // depends on vendors
-            UserLocationsSeeder::class,  // depends on users + locations
-            PurchaseRequestsSeeder::class, // generate purchase requests with codes
+            // purchase orders require vendors seeded above
+            PurchaseOrdersSeeder::class,
+            // attaches users to locations
+            UserLocationsSeeder::class,
+            // generate purchase requests with reference numbers
+            PurchaseRequestsSeeder::class,
             PurchaseItemSeeder::class,
 
         ]);

@@ -297,9 +297,11 @@ class PurchaseRequestController extends Controller
             'note' => ['nullable', 'string', 'max:1000'],
             'purpose' => ['nullable', 'string', 'max:1000'],
             'item' => ['required', 'array', 'min:1'],
-            'item.*.item_no' => ['required', 'integer', 'min:1'],
             'item.*.details' => ['required', 'string', 'max:500'],
             'item.*.purpose' => ['nullable', 'string', 'max:500'],
+            // Keep optional fields so they persist to DB when provided from the UI
+            'item.*.item_code' => ['nullable', 'string', 'max:100'],
+            'item.*.unit' => ['nullable', 'string', 'max:50'],
             'item.*.quantity' => ['required', 'integer', 'min:1'],
             'item.*.price' => ['required', 'numeric', 'min:0'],
             'attachment' => ['nullable', 'file', 'mimes:pdf,jpg,jpeg,png,doc,docx,xls,xlsx', 'max:5120'],
@@ -329,12 +331,19 @@ class PurchaseRequestController extends Controller
         }
 
         $user = $request->user();
+        // Initialize variable to be captured by reference inside the transaction
+        $purchaseRequest = null;
 
         DB::transaction(function () use ($validated, $user, $path, &$purchaseRequest) {
             $purchaseRequest = new PurchaseRequest();
             $purchaseRequest->user_id = $user->id;
-            // If applicant is always the current user at creation time
-            $purchaseRequest->applicant_id = $user->id;
+            // Ensure user has a staff_id; if missing, generate a simple one and persist
+            if (empty($user->staff_id)) {
+                $user->staff_id = 'U' . str_pad((string) $user->id, 5, '0', STR_PAD_LEFT);
+                $user->save();
+            }
+            // applicant_id now stores staff_id instead of user_id
+            $purchaseRequest->applicant_id = $user->staff_id;
             $purchaseRequest->title = $validated['title'];
             $purchaseRequest->type_procurement_id = $validated['type_procurement_id'];
             $purchaseRequest->file_reference_id = $validated['file_reference_id'];
@@ -448,6 +457,20 @@ class PurchaseRequestController extends Controller
         // Ownership check
         abort_if($purchaseRequest->user_id !== $request->user()->id, 403);
 
+        // Load single-option lists so the read-only form can render selected labels
+        $typeProcurements = DB::table('type_procurements')
+            ->select('id', 'procurement_code', 'procurement_description')
+            ->where('id', $purchaseRequest->type_procurement_id)
+            ->get();
+        $fileReferences = DB::table('file_references')
+            ->select('id', 'file_code', 'file_description')
+            ->where('id', $purchaseRequest->file_reference_id)
+            ->get();
+        $vots = DB::table('vots')
+            ->select('id', 'vot_code', 'vot_description')
+            ->where('id', $purchaseRequest->vot_id)
+            ->get();
+
         return Inertia::render('purchase-requests/Show', [
             'request' => [
                 'id' => $purchaseRequest->id,
@@ -486,6 +509,11 @@ class PurchaseRequestController extends Controller
                 'attachment_path' => $purchaseRequest->attachment_path,
                 'attachment_url' => $purchaseRequest->attachment_path ? Storage::disk('public')->url($purchaseRequest->attachment_path) : null,
                 'purchase_ref_no' => $purchaseRequest->purchase_ref_no,
+            ],
+            'options' => [
+                'type_procurements' => $typeProcurements,
+                'file_references' => $fileReferences,
+                'vots' => $vots,
             ],
         ]);
     }

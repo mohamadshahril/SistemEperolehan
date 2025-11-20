@@ -25,8 +25,10 @@ class PurchaseRequestFactory extends Factory
 
         return [
             'user_id' => User::factory(),
-            // Ensure applicant_id is set to satisfy FK constraint
-            'applicant_id' => User::factory(),
+            // applicant_id now stores staff_id (string)
+            'applicant_id' => function () {
+                return User::factory()->create()->staff_id;
+            },
             // Header fields (new schema)
             'title' => $this->faker->sentence(3),
             'type_procurement_id' => 1,

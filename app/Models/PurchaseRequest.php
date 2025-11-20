@@ -38,6 +38,12 @@ class PurchaseRequest extends Model
         'budget' => 'decimal:2',
     ];
 
+    /**
+     * Ensure computed attributes are included when serializing to JSON/arrays.
+     * - status: human-readable status name derived from status_id/statusRef
+     */
+    protected $appends = ['status', 'attachment_url'];
+
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
@@ -48,7 +54,8 @@ class PurchaseRequest extends Model
      */
     public function applicant(): BelongsTo
     {
-        return $this->belongsTo(User::class, 'applicant_id');
+        // applicant_id now stores User.staff_id (string), so map local key -> parent staff_id
+        return $this->belongsTo(User::class, 'applicant_id', 'staff_id');
     }
 
     public function fileReference(): BelongsTo
@@ -108,6 +115,20 @@ class PurchaseRequest extends Model
         return $this->relationLoaded('statusRef')
             ? ($this->statusRef?->name)
             : optional($this->statusRef()->first(['name']))?->name;
+    }
+
+    /**
+     * Accessor for a public URL to the stored attachment, if any.
+     */
+    public function getAttachmentUrlAttribute(): ?string
+    {
+        $path = $this->attributes['attachment_path'] ?? null;
+        if (!$path) return null;
+        try {
+            return \Illuminate\Support\Facades\Storage::disk('public')->url($path);
+        } catch (\Throwable $e) {
+            return null;
+        }
     }
 
     /**

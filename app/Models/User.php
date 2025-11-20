@@ -60,7 +60,8 @@ class User extends Authenticatable
      */
     public function purchaseRequestsAsApplicant(): HasMany
     {
-        return $this->hasMany(PurchaseRequest::class, 'applicant_id');
+        // applicant_id on purchase_requests now stores users.staff_id (string)
+        return $this->hasMany(PurchaseRequest::class, 'applicant_id', 'staff_id');
     }
 
     /**

@@ -1,21 +1,30 @@
 <script setup lang="ts">
 import AppLayout from '@/layouts/AppLayout.vue'
 import { Head, router } from '@inertiajs/vue3'
-import { reactive } from 'vue'
-import ActionButtons from '@/components/ActionButtons.vue'
+import { reactive, computed } from 'vue'
+import IconButton from '@/components/IconButton.vue'
+import { Eye, Pencil, Paperclip, Printer, Trash2 } from 'lucide-vue-next'
+
+type RequestRow = {
+  id: number
+  title: string
+  budget: number
+  status: string
+  submitted_at: string | null
+  purchase_ref_no?: string | null
+  attachment_url?: string | null
+}
 
 const props = defineProps<{
   requests: {
-    data: Array<{
-      id: number
-      title: string
-      budget: string | number
-      purchase_ref_no?: string | null
-      status: string
-      submitted_at: string | null
-      attachment_path?: string | null
-    }>
+    data: RequestRow[]
     links: Array<{ url: string | null; label: string; active: boolean }>
+    // Include minimal paginator meta we need for row numbering
+    meta?: {
+      from?: number | null
+      current_page?: number
+      per_page?: number
+    }
   }
   filters: {
     search?: string | null
@@ -26,7 +35,7 @@ const props = defineProps<{
     sort_dir?: 'asc' | 'desc' | null
     per_page?: number | null
   }
-  statuses: string[]
+  statuses?: string[]
 }>()
 
 const state = reactive({
@@ -38,6 +47,8 @@ const state = reactive({
   sort_dir: (props.filters.sort_dir as 'asc' | 'desc' | null) ?? 'desc',
   per_page: props.filters.per_page ?? 10,
 })
+
+const statusOptions = computed(() => props.statuses ?? ['Pending', 'Approved', 'Rejected'])
 
 function applyFilters(extra: Record<string, unknown> = {}) {
   router.get('/purchase-requests', {
@@ -57,6 +68,8 @@ function resetFilters() {
   state.status = ''
   state.from_date = ''
   state.to_date = ''
+  // keep current sort, reset per_page to default 10 for consistency with other pages
+  state.per_page = 10
   applyFilters({ page: 1 })
 }
 
@@ -75,18 +88,29 @@ function goTo(url: string | null) {
   router.get(url, {}, { preserveState: true, preserveScroll: true })
 }
 
+// Map status text to Tailwind color classes
+function statusClass(status: string | undefined | null): string {
+  const s = (status || '').toLowerCase()
+  if (s === 'approved') return 'bg-green-100 text-green-800 border border-green-200'
+  if (s === 'rejected') return 'bg-red-100 text-red-800 border border-red-200'
+  if (s === 'pending') return 'bg-yellow-100 text-yellow-800 border border-yellow-200'
+  return 'bg-gray-100 text-gray-800 border border-gray-200'
+}
+
+// Compute display row number accounting for pagination
+function rowNumber(index: number): number {
+  const from = props.requests.meta?.from ?? (((props.requests.meta?.current_page ?? 1) - 1) * (props.requests.meta?.per_page ?? state.per_page) + 1)
+  return from + index
+}
+
 function destroyRequest(id: number) {
-  if (!confirm('Are you sure you want to delete this purchase request? This action cannot be undone.')) return
-  router.delete(`/purchase-requests/${id}`, {
-    preserveScroll: true,
-    preserveState: true,
-    onSuccess: () => {},
-  })
+  if (!confirm('Delete this purchase request? This action cannot be undone.')) return
+  router.delete(`/purchase-requests/${id}`, { preserveScroll: true, preserveState: true })
 }
 </script>
 
 <template>
-  <Head title="Purchase Requests" />
+  <Head title="My Purchase Requests" />
   <AppLayout :breadcrumbs="[{ title: 'Purchase Requests', href: '/purchase-requests' }]">
     <div class="p-4">
       <div class="mb-4 flex items-center justify-between gap-3">
@@ -94,13 +118,14 @@ function destroyRequest(id: number) {
         <a href="/purchase-requests/create" class="rounded-md bg-primary px-3 py-2 text-white">New Request</a>
       </div>
 
-      <div class="mb-4 grid grid-cols-1 gap-3 md:grid-cols-5">
+      <!-- Filters area (Vue 3 table design) -->
+      <div class="mb-3 grid grid-cols-1 gap-3 md:grid-cols-5">
         <div class="md:col-span-2">
           <label class="block text-sm font-medium">Search</label>
           <input
             v-model="state.search"
             type="text"
-            placeholder="Title, ref no, ID, or date (YYYY-MM-DD)"
+            placeholder="Title, ref no, or date (YYYY-MM-DD)"
             @keyup.enter="applyFilters({ page: 1 })"
             class="mt-1 block w-full rounded-md border p-2"
           />
@@ -109,7 +134,7 @@ function destroyRequest(id: number) {
           <label class="block text-sm font-medium">Status</label>
           <select v-model="state.status" class="mt-1 block w-full rounded-md border p-2">
             <option value="">All</option>
-            <option v-for="s in props.statuses" :key="s" :value="s">{{ s }}</option>
+            <option v-for="s in statusOptions" :key="s" :value="s">{{ s }}</option>
           </select>
         </div>
         <div>
@@ -122,6 +147,7 @@ function destroyRequest(id: number) {
         </div>
       </div>
 
+      <!-- Actions bar: Apply / Reset and Per-page selector -->
       <div class="mb-4 flex items-center gap-3">
         <button @click="applyFilters({ page: 1 })" class="rounded-md border px-3 py-2">Apply</button>
         <button @click="resetFilters" class="rounded-md border px-3 py-2">Reset</button>
@@ -139,81 +165,50 @@ function destroyRequest(id: number) {
         <table class="min-w-full divide-y">
           <thead class="bg-muted/30">
             <tr>
-              <th class="px-4 py-2 text-left text-sm font-medium">View</th>
-              <th class="px-4 py-2 text-left text-sm font-medium">
-                <button @click="sortBy('title')" class="hover:underline">Title</button>
-              </th>
-              <th class="px-4 py-2 text-left text-sm font-medium">Purchase Ref No</th>
-              <th class="px-4 py-2 text-left text-sm font-medium">
-                <button @click="sortBy('budget')" class="hover:underline">Budget</button>
-              </th>
-              <th class="px-4 py-2 text-left text-sm font-medium">
-                <button @click="sortBy('submitted_at')" class="hover:underline">Date</button>
-              </th>
-              <th class="px-4 py-2 text-left text-sm font-medium">
-                <button @click="sortBy('status')" class="hover:underline">Status</button>
-              </th>
+              <th class="px-4 py-2 text-left text-sm font-medium"><button @click="sortBy('id')" class="hover:underline">#</button></th>
+              <th class="px-4 py-2 text-left text-sm font-medium"><button @click="sortBy('title')" class="hover:underline">Title</button></th>
+              <th class="px-4 py-2 text-left text-sm font-medium"><button @click="sortBy('submitted_at')" class="hover:underline">Submitted</button></th>
+              <th class="px-4 py-2 text-left text-sm font-medium"><button @click="sortBy('status')" class="hover:underline">Status</button></th>
+              <th class="px-4 py-2 text-left text-sm font-medium"><button @click="sortBy('budget')" class="hover:underline">Budget (RM)</button></th>
               <th class="px-4 py-2 text-left text-sm font-medium">Attachment</th>
               <th class="px-4 py-2 text-left text-sm font-medium">Actions</th>
             </tr>
           </thead>
           <tbody>
-            <tr v-for="row in props.requests.data" :key="row.id" class="odd:bg-white even:bg-muted/10">
-                <td class="px-4 py-2">
-                    <ActionButtons :view-url="`/purchase-requests/${row.id}`" />
-                </td>
-<!--              <td class="px-4 py-2"><a :href="`/purchase-requests/${row.id}`" class="rounded-md border px-2 py-1 text-sm hover:bg-muted">View</a></td>-->
+            <tr v-for="(req, i) in props.requests.data" :key="req.id" class="odd:bg-white even:bg-muted/10">
+              <td class="px-4 py-2">{{ rowNumber(i) }}</td>
               <td class="px-4 py-2">
-                <div class="font-medium">{{ row.title }}</div>
-                <div class="text-xs text-muted-foreground">#{{ row.id }}</div>
+                <div class="font-medium">{{ req.title }}</div>
+                <div class="text-xs text-muted-foreground" v-if="req.purchase_ref_no">Ref: {{ req.purchase_ref_no }}</div>
               </td>
-              <td class="px-4 py-2 font-mono">{{ row.purchase_ref_no || '-' }}</td>
-              <td class="px-4 py-2">{{ 'RM ' + Number(row.budget).toLocaleString('en-MY', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }}</td>
-              <td class="px-4 py-2">{{ row.submitted_at ? new Date(row.submitted_at).toLocaleDateString('en-GB', { timeZone: 'UTC' }) : '-' }}</td>
+              <td class="px-4 py-2">{{ req.submitted_at ? new Date(req.submitted_at).toLocaleString() : '-' }}</td>
               <td class="px-4 py-2">
-                <span
-                  class="inline-flex items-center rounded-full px-2 py-0.5 text-xs"
-                  :class="{
-                    'bg-yellow-100 text-yellow-800': row.status === 'Pending',
-                    'bg-green-100 text-green-800': row.status === 'Approved',
-                    'bg-red-100 text-red-800': row.status === 'Rejected',
-                  }"
-                >
-                  {{ row.status }}
-                </span>
+                <span class="rounded px-2 py-1 text-xs" :class="statusClass(req.status)">{{ req.status }}</span>
               </td>
-                <td class="px-4 py-2">
-                    <ActionButtons :attach-url="`/storage/${row.attachment_path}`"
-                    />
-                </td>
-<!--              <td class="px-4 py-2">-->
-<!--                <a v-if="row.attachment_path" :href="`/storage/${row.attachment_path}`" target="_blank" class="text-primary hover:underline">View</a>-->
-<!--                <span v-else class="text-muted-foreground">-</span>-->
-<!--              </td>-->
-
-                <td class="px-4 py-2">
-                    <ActionButtons
-                        :print-url="`/purchase-requests/${row.id}/edit?print=1`"
-                        :edit-url="row.status === 'Pending' ? `/purchase-requests/${row.id}/edit` : null"
-                        :can-edit="row.status === 'Pending'"
-                        :can-delete="row.status === 'Pending'"
-                        @delete="destroyRequest(row.id)"
-                    />
-                </td>
-<!--              <td class="px-4 py-2">-->
-<!--                <div class="flex items-center gap-3">-->
-<!--                  <a :href="`/purchase-requests/${row.id}/edit?print=1`" class="text-primary hover:underline">Print</a>-->
-<!--                  <template v-if="row.status === 'Pending'">-->
-<!--                    <span class="text-muted-foreground">|</span>-->
-<!--                    <a :href="`/purchase-requests/${row.id}/edit`" class="text-primary hover:underline">Edit</a>-->
-<!--                    <button @click="destroyRequest(row.id)" class="text-red-600 hover:underline">Delete</button>-->
-<!--                  </template>-->
-<!--                  <span v-else class="text-muted-foreground">—</span>-->
-<!--                </div>-->
-<!--              </td>-->
+              <td class="px-4 py-2">{{ Number(req.budget).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }}</td>
+              <td class="px-4 py-2">
+                <div class="flex items-center">
+                  <!-- Show attachment icon only when an attachment exists -->
+                  <IconButton
+                    v-if="req.attachment_url"
+                    :icon="Paperclip"
+                    title="Attachment"
+                    :href="req.attachment_url"
+                    external
+                  />
+                </div>
+              </td>
+              <td class="px-4 py-2">
+                <div class="flex items-center gap-2">
+                  <IconButton :icon="Eye" title="View" :href="`/purchase-requests/${req.id}`" />
+                  <IconButton v-if="(req.status||'').toLowerCase() === 'pending'" :icon="Pencil" title="Edit" :href="`/purchase-requests/${req.id}/edit`" />
+                  <IconButton :icon="Printer" title="Print" :href="`/purchase-requests/${req.id}?print=1`" external />
+                  <IconButton v-if="(req.status||'').toLowerCase() === 'pending'" :icon="Trash2" title="Delete" variant="danger" @click="() => destroyRequest(req.id)" />
+                </div>
+              </td>
             </tr>
             <tr v-if="props.requests.data.length === 0">
-              <td colspan="8" class="px-4 py-8 text-center text-muted-foreground">No purchase requests found.</td>
+              <td colspan="7" class="px-4 py-8 text-center text-sm text-muted-foreground">No purchase requests found.</td>
             </tr>
           </tbody>
         </table>
@@ -225,13 +220,13 @@ function destroyRequest(id: number) {
         </div>
         <nav class="flex flex-wrap gap-1">
           <button
-            v-for="link in props.requests.links"
-            :key="link.label"
-            class="rounded border px-3 py-1 text-sm"
-            :class="{ 'bg-primary text-white border-primary': link.active }"
-            v-html="link.label"
-            :disabled="!link.url"
-            @click="goTo(link.url)"
+            v-for="l in props.requests.links"
+            :key="l.label + (l.url || '')"
+            :disabled="!l.url"
+            @click="goTo(l.url)"
+            class="rounded border px-3 py-1 text-sm disabled:opacity-50"
+            :class="{ 'bg-primary text-white border-primary': l.active }"
+            v-html="l.label"
           />
         </nav>
       </div>

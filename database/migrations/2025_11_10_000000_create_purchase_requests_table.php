@@ -10,8 +10,8 @@ return new class extends Migration {
         Schema::create('purchase_requests', function (Blueprint $table) {
             $table->id();
             $table->foreignId('user_id')->constrained()->cascadeOnDelete();
-            // Applicant (the user who submits the request)
-            $table->foreignId('applicant_id')->constrained('users')->cascadeOnDelete();
+            // Applicant (the user who submits the request) — store staff_id string
+            $table->string('applicant_id')->index();
             $table->string('title');
             $table->foreignId('type_procurement_id')->index();
             $table->foreignId('file_reference_id')->index();
@@ -19,8 +19,7 @@ return new class extends Migration {
             $table->string('location_iso_code')->index();
             $table->decimal('budget', 12, 2);
             $table->text('note')->nullable();
-            // Items are stored in purchase_items table; keep nullable reference for potential linking
-            $table->foreignId('item_id')->nullable()->index(); // optional link to a primary item if needed
+            // Items are stored in purchase_items table
             $table->foreignId('status_id')->index(); // references statuses.id
             $table->dateTime('submitted_at')->nullable();
             $table->string('attachment_path')->nullable();
