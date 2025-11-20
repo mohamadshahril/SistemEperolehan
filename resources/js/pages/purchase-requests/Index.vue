@@ -129,7 +129,6 @@ function destroyRequest(id: number) {
         <div>
           <label class="block text-sm font-medium">Status</label>
           <select v-model="state.status" class="mt-1 block w-full rounded-md border p-2">
-            <option value="">All</option>
             <option v-for="s in statusOptions" :key="s" :value="s">{{ s }}</option>
           </select>
         </div>
@@ -161,7 +160,10 @@ function destroyRequest(id: number) {
         <table class="min-w-full divide-y">
           <thead class="bg-muted/30">
             <tr>
-              <th class="px-4 py-2 text-left text-sm font-medium"><button @click="sortBy('id')" class="hover:underline">ID</button></th>
+              <!-- Ref No column is now sortable by purchase_ref_no -->
+              <th class="px-4 py-2 text-left text-sm font-medium">
+                <button @click="sortBy('purchase_ref_no')" class="hover:underline">Ref No</button>
+              </th>
               <th class="px-4 py-2 text-left text-sm font-medium"><button @click="sortBy('title')" class="hover:underline">Title</button></th>
               <th class="px-4 py-2 text-left text-sm font-medium"><button @click="sortBy('submitted_at')" class="hover:underline">Submitted</button></th>
               <th class="px-4 py-2 text-left text-sm font-medium"><button @click="sortBy('status')" class="hover:underline">Status</button></th>
@@ -172,10 +174,11 @@ function destroyRequest(id: number) {
           </thead>
           <tbody>
             <tr v-for="req in props.requests.data" :key="req.id" class="odd:bg-white even:bg-muted/10">
-              <td class="px-4 py-2">{{ req.id }}</td>
+              <!-- Ref No column -->
+              <td class="px-4 py-2">{{ req.purchase_ref_no || '-' }}</td>
               <td class="px-4 py-2">
                 <div class="font-medium">{{ req.title }}</div>
-                <div class="text-xs text-muted-foreground" v-if="req.purchase_ref_no">Ref: {{ req.purchase_ref_no }}</div>
+                <div class="text-xs text-muted-foreground">ID: #{{ req.id }}</div>
               </td>
               <td class="px-4 py-2">{{ req.submitted_at ? new Date(req.submitted_at).toLocaleString() : '-' }}</td>
               <td class="px-4 py-2">

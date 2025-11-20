@@ -39,6 +39,7 @@ class DatabaseSeeder extends Seeder
         // Seed purchase requests via dedicated seeder (kept small and safe to re-run)
         $this->call([
             PurchaseRequestSeeder::class,
+            PurchaseItemSeeder::class,
         ]);
 
         // Seed vendors

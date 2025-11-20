@@ -26,14 +26,20 @@ class PurchaseRequestController extends Controller
             'status' => ['nullable', 'string'],
             'from_date' => ['nullable', 'date'],
             'to_date' => ['nullable', 'date', 'after_or_equal:from_date'],
-            'sort_by' => ['nullable', Rule::in(['id', 'title', 'budget', 'submitted_at', 'status'])],
+            'sort_by' => ['nullable', Rule::in(['id', 'title', 'budget', 'submitted_at', 'status', 'purchase_ref_no'])],
             'sort_dir' => ['nullable', Rule::in(['asc', 'desc'])],
             'page' => ['nullable', 'integer', 'min:1'],
             'per_page' => ['nullable', 'integer', 'min:1', 'max:100'],
         ]);
 
+        // Show only requests for the current applicant (by applicant_id matching user's staff_id)
+        // Fallback to user_id when staff_id is not set to keep backward compatibility
         $query = PurchaseRequest::query()
-            ->where('user_id', $user->id)
+            ->when(!empty($user->staff_id), function ($q) use ($user) {
+                $q->where('applicant_id', $user->staff_id);
+            }, function ($q) use ($user) {
+                $q->where('user_id', $user->id);
+            })
             ->with(['statusRef:id,name']);
 
         // Search by title, note (formerly purpose), ID, purchase_ref_no, or date (submitted_at)
@@ -52,7 +58,8 @@ class PurchaseRequestController extends Controller
             ? $request->string('status')->toString()
             : 'Pending';
 
-        if ($effectiveStatus !== '') {
+        // Support "All" to mean no status filtering (case-insensitive)
+        if ($effectiveStatus !== '' && strtolower($effectiveStatus) !== 'all') {
             $statusId = Status::query()->where('name', $effectiveStatus)->value('id');
             if ($statusId) {
                 $query->where('status_id', $statusId);
@@ -94,7 +101,8 @@ class PurchaseRequestController extends Controller
                 'sort_dir' => $sortDir,
                 'per_page' => $perPage,
             ],
-            'statuses' => ['Pending', 'Approved', 'Rejected'],
+            // Include 'All' for unfiltered view of the user's requests
+            'statuses' => ['All', 'Pending', 'Approved', 'Rejected'],
         ]);
     }
 
@@ -634,8 +642,8 @@ class PurchaseRequestController extends Controller
     }
 
     /**
-     * Generate a purchase code in format: AIM/BDGT({location})/{file_code}/{vot_code}/{running}
-     * Example: AIM/BDGT/MY-SGR/400-11/232/1
+     * Generate a purchase code in format: AIM/({location})/{file_code}/{vot_code}/{running}
+     * Example: AIM/MY-SGR/400-11/232/1
      */
     protected function generatePurchaseRefNo(PurchaseRequest $pr): string
     {
@@ -656,7 +664,7 @@ class PurchaseRequestController extends Controller
         // Next number
         $running += 1;
 
-        // Include BDGT and location per requirement
+        //location per requirement
         return sprintf('AIM/%s/%s/%s/%d', $locationPart, $fileCode, $votCode, $running);
     }
 }
