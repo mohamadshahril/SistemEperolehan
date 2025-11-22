@@ -30,6 +30,7 @@ const props = defineProps<{
     type_procurements: Option[]
     file_references: Option[]
     vots: Option[]
+    item_units?: Array<{ id: number; unit_code: string; unit_description: string }>
   }
   readOnly?: boolean
 }>()
@@ -50,7 +51,7 @@ function addItem() {
   if (props.readOnly) return
   emit('update:modelValue', {
     ...props.modelValue,
-    item: [...props.modelValue.item, { details: '', quantity: 1, price: 0 }],
+    item: [...props.modelValue.item, { details: '', quantity: 1, price: 0, purpose: '', item_code: '', unit: null }],
   })
 }
 
@@ -67,7 +68,12 @@ function updateField<K extends keyof typeof props.modelValue>(key: K, value: (ty
 
 function updateItem(idx: number, key: keyof (typeof props.modelValue.item)[number], value: unknown) {
   const items = props.modelValue.item.slice()
-  items[idx] = { ...items[idx], [key]: value }
+  // Normalize empty selection for optional fields
+  let nextValue = value as any
+  if (key === 'unit' && (value === '' || value === undefined)) {
+    nextValue = null
+  }
+  items[idx] = { ...items[idx], [key]: nextValue }
   emit('update:modelValue', { ...props.modelValue, item: items })
 }
 </script>
@@ -158,6 +164,8 @@ function updateItem(idx: number, key: keyof (typeof props.modelValue.item)[numbe
             <tr>
               <th class="px-2 py-1 text-left">#</th>
               <th class="px-2 py-1 text-left">Details</th>
+              <th class="px-2 py-1 text-left">Item Code</th>
+              <th class="px-2 py-1 text-left">Unit</th>
               <th class="px-2 py-1 text-left">Qty</th>
               <th class="px-2 py-1 text-left">Unit Price (RM)</th>
               <th class="px-2 py-1 text-left">Purpose</th>
@@ -170,6 +178,22 @@ function updateItem(idx: number, key: keyof (typeof props.modelValue.item)[numbe
               <td class="px-2 py-1">{{ idx + 1 }}</td>
               <td class="px-2 py-1">
                 <input :disabled="readOnly" class="w-full rounded-md border p-1" :value="it.details" @input="(e:any)=>updateItem(idx,'details', e.target.value)" />
+              </td>
+              <td class="px-2 py-1">
+                <input :disabled="readOnly" class="w-full rounded-md border p-1" :value="it.item_code || ''" @input="(e:any)=>updateItem(idx,'item_code', e.target.value)" />
+              </td>
+              <td class="px-2 py-1">
+                <select
+                  :disabled="readOnly"
+                  class="w-full rounded-md border p-1"
+                  :value="it.unit || ''"
+                  @change="(e:any)=>updateItem(idx,'unit', e.target.value)"
+                >
+                  <option value="">Select...</option>
+                  <option v-for="u in (props.options.item_units || [])" :key="u.id" :value="u.unit_code">
+                    {{ u.unit_code }}
+                  </option>
+                </select>
               </td>
               <td class="px-2 py-1">
                 <input :disabled="readOnly" type="number" min="1" step="1" class="w-24 rounded-md border p-1" :value="it.quantity" @input="(e:any)=>updateItem(idx,'quantity', e.target.value)" />
@@ -188,12 +212,12 @@ function updateItem(idx: number, key: keyof (typeof props.modelValue.item)[numbe
               </td>
             </tr>
             <tr v-if="props.modelValue.item.length === 0">
-              <td colspan="7" class="px-3 py-4 text-center text-sm text-muted-foreground">No items. Click "Add item" to start.</td>
+              <td colspan="9" class="px-3 py-4 text-center text-sm text-muted-foreground">No items. Click "Add item" to start.</td>
             </tr>
           </tbody>
           <tfoot>
             <tr>
-              <td colspan="5" class="px-2 py-2 text-right font-medium">Total</td>
+              <td colspan="7" class="px-2 py-2 text-right font-medium">Total</td>
               <td class="px-2 py-2 text-right font-medium">RM {{ total.toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2}) }}</td>
               <td v-if="!readOnly" />
             </tr>

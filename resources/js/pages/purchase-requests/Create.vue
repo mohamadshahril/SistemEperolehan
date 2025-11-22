@@ -9,6 +9,7 @@ const props = defineProps<{
     type_procurements: Array<{ id: number; procurement_code: string; procurement_description: string }>
     file_references: Array<{ id: number; file_code: string; file_description: string }>
     vots: Array<{ id: number; vot_code: string; vot_description: string }>
+    item_units: Array<{ id: number; unit_code: string; unit_description: string }>
   }
   current_user?: { name?: string | null; location_iso_code?: string | null }
   today?: string

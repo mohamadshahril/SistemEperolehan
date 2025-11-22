@@ -283,12 +283,24 @@ class PurchaseRequestController extends Controller
             ->orderBy('vot_code')
             ->get();
 
+        // Load item units (active only) for unit selection in items
+        $itemUnits = DB::table('item_units')
+            ->select(
+                'id',
+                DB::raw("code as unit_code"),
+                DB::raw("name as unit_description")
+            )
+            ->where('status', 1)
+            ->orderBy('code')
+            ->get();
+
         $user = auth()->user();
         return Inertia::render('purchase-requests/Create', [
             'options' => [
                 'type_procurements' => $typeProcurements,
                 'file_references' => $fileReferences,
                 'vots' => $vots,
+                'item_units' => $itemUnits,
             ],
             'current_user' => [
                 'name' => $user?->name,
@@ -314,7 +326,8 @@ class PurchaseRequestController extends Controller
             'item.*.purpose' => ['nullable', 'string', 'max:500'],
             // Keep optional fields so they persist to DB when provided from the UI
             'item.*.item_code' => ['nullable', 'string', 'max:100'],
-            'item.*.unit' => ['nullable', 'string', 'max:50'],
+            // Unit must reference item_units.code when provided (frontend sends value from `unit_code` alias)
+            'item.*.unit' => ['nullable', 'string', 'max:50', Rule::exists('item_units', 'code')],
             'item.*.quantity' => ['required', 'integer', 'min:1'],
             'item.*.price' => ['required', 'numeric', 'min:0'],
             'attachment' => ['nullable', 'file', 'mimes:pdf,jpg,jpeg,png,doc,docx,xls,xlsx', 'max:5120'],
