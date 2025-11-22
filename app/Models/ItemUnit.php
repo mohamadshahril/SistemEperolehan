@@ -11,7 +11,7 @@ class ItemUnit extends Model
     use HasFactory, SoftDeletes;
 
     protected $fillable = [
-        'code',
+        'unit_code',
         'name',
         'description',
         'status',

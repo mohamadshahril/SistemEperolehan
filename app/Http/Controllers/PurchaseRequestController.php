@@ -294,7 +294,7 @@ class PurchaseRequestController extends Controller
                 DB::raw("name as unit_description")
             )
             ->where('status', 1)
-            ->orderBy('code')
+            ->orderBy('unit_code')
             ->get();
 
         $user = auth()->user();
@@ -430,6 +430,15 @@ class PurchaseRequestController extends Controller
             ->select('id', 'vot_code', 'vot_description')
             ->orderBy('vot_code')
             ->get();
+        $itemUnits = DB::table('item_units')
+            ->select(
+                'id',
+                DB::raw("code as unit_code"),
+                DB::raw("name as unit_description")
+            )
+            ->where('status', 1)
+            ->orderBy('unit_code')
+            ->get();
 
         return Inertia::render('purchase-requests/Edit', [
             'request' => [
@@ -477,6 +486,7 @@ class PurchaseRequestController extends Controller
                 'type_procurements' => $typeProcurements,
                 'file_references' => $fileReferences,
                 'vots' => $vots,
+                'item_units' => $itemUnits,
             ],
         ]);
     }
@@ -510,7 +520,7 @@ class PurchaseRequestController extends Controller
                 DB::raw("name as unit_description")
             )
             ->where('status', 1)
-            ->orderBy('code')
+            ->orderBy('unit_code')
             ->get();
 
         return Inertia::render('purchase-requests/Show', [

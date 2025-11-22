@@ -14,7 +14,7 @@ class ItemUnitController extends Controller
         $validated = $request->validate([
             'search' => ['nullable', 'string'],
             'status' => ['nullable', Rule::in(['1','2'])],
-            'sort_by' => ['nullable', Rule::in(['code','name','status','created_at'])],
+            'sort_by' => ['nullable', Rule::in(['unit_code','name','status','created_at'])],
             'sort_dir' => ['nullable', Rule::in(['asc','desc'])],
             'page' => ['nullable', 'integer', 'min:1'],
             'per_page' => ['nullable', 'integer', 'min:1', 'max:100'],
@@ -24,7 +24,7 @@ class ItemUnitController extends Controller
 
         if ($search = $request->string('search')->toString()) {
             $query->where(function($q) use ($search) {
-                $q->where('code', 'like', "%{$search}%")
+                $q->where('unit_code', 'like', "%{$search}%")
                   ->orWhere('name', 'like', "%{$search}%")
                   ->orWhere('description', 'like', "%{$search}%");
             });
@@ -65,7 +65,7 @@ class ItemUnitController extends Controller
     public function store(Request $request)
     {
         $data = $request->validate([
-            'code' => ['required','string','max:50','unique:item_units,code'],
+            'unit_code' => ['required','string','max:50','unique:item_units,unit_code'],
             'name' => ['required','string','max:100'],
             'description' => ['nullable','string'],
             'status' => ['nullable', Rule::in([1,2])],
@@ -86,7 +86,7 @@ class ItemUnitController extends Controller
     public function update(Request $request, ItemUnit $itemUnit)
     {
         $data = $request->validate([
-            'code' => ['required','string','max:50', Rule::unique('item_units','code')->ignore($itemUnit->id)],
+            'unit_code' => ['required','string','max:50', Rule::unique('item_units','unit_code')->ignore($itemUnit->id)],
             'name' => ['required','string','max:100'],
             'description' => ['nullable','string'],
             'status' => ['nullable', Rule::in([1,2])],
