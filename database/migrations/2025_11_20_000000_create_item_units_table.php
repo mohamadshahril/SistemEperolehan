@@ -13,7 +13,7 @@ return new class extends Migration
     {
         Schema::create('item_units', function (Blueprint $table) {
             $table->id();
-            $table->string('code')->unique();
+            $table->string('unit_code')->unique();
             $table->string('name');
             $table->text('description')->nullable();
             // 1 = Active, 2 = Inactive (align with Locations pattern)

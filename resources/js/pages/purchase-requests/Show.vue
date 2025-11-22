@@ -16,10 +16,8 @@ const props = defineProps<{
     location_iso_code?: string | null
     budget: number | string
     note?: string | null
-    notes?: string | null
     purpose?: string | null
     item: Array<{ details: string; purpose?: string | null; quantity: number | string; price: number | string; item_code?: string | null; unit?: string | null }>
-    items?: Array<{ details: string; purpose?: string | null; quantity: number | string; price: number | string; item_code?: string | null; unit?: string | null }>
     attachment_url?: string | null
     status?: string
     purchase_ref_no?: string | null
@@ -29,6 +27,7 @@ const props = defineProps<{
     type_procurements: Array<{ id: number; procurement_code?: string; procurement_description?: string }>
     file_references: Array<{ id: number; file_code?: string; file_description?: string }>
     vots: Array<{ id: number; vot_code?: string; vot_description?: string }>
+    item_units: Array<{ id: number; unit_code?: string; unit_description?: string }>
   }
 }>()
 
@@ -102,8 +101,7 @@ onMounted(() => {
           <label class="block text-sm font-medium">Attachment</label>
           <a :href="props.request.attachment_url" target="_blank" class="text-primary hover:underline">Download file</a>
         </div>
-
-        <Form :model-value="readonlyModel as any" :options="props.options as any" :read-only="true" />
+        <component :is="Form" :model-value="readonlyModel as any" :options="props.options as any" :read-only="true" />
       </div>
     </div>
   </AppLayout>

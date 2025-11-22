@@ -21,7 +21,8 @@ return new class extends Migration
             $table->string('item_name');
             $table->string('item_code')->nullable();
             $table->text('purpose')->nullable();
-            $table->string('unit')->nullable(); // e.g., pcs, box, kg
+            // Unit references item_units.code (string), not id
+            $table->string('unit', 50)->nullable()->index(); // e.g., pcs, box, kg
             $table->integer('quantity')->default(1);
             $table->decimal('unit_price', 12, 2)->nullable();
             $table->decimal('total_price', 14, 2)->nullable(); // optional if calculated
