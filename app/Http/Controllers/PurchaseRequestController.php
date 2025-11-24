@@ -523,6 +523,8 @@ class PurchaseRequestController extends Controller
             ->orderBy('unit_code')
             ->get();
 
+        $user = auth()->user();
+
         return Inertia::render('purchase-requests/Show', [
             'request' => [
                 'id' => $purchaseRequest->id,
@@ -568,6 +570,11 @@ class PurchaseRequestController extends Controller
                 'vots' => $vots,
                 'item_units' => $itemUnits,
             ],
+            'current_user' => [
+                'name' => $user?->name,
+                'location_iso_code' => $user?->location_iso_code,
+            ],
+            'today' => now()->toDateString(),
         ]);
     }
 
