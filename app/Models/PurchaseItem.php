@@ -9,8 +9,8 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 
 class PurchaseItem extends Model
 {
-    //
     use HasFactory, SoftDeletes;
+
     protected $fillable = [
         'purchase_request_id',
         'purchase_ref_no',
@@ -21,7 +21,7 @@ class PurchaseItem extends Model
         'quantity',
         'unit_price',
         'total_price',
-        ];
+    ];
 
     protected $casts = [
         'quantity' => 'integer',
@@ -35,6 +35,15 @@ class PurchaseItem extends Model
     public function purchaseRequest()
     {
         return $this->belongsTo(PurchaseRequest::class);
+    }
+
+    /**
+     * Relationship: the unit of this item (joins on unit code).
+     */
+    public function itemUnit()
+    {
+        // local key `unit` references ItemUnit `code`
+        return $this->belongsTo(ItemUnit::class, 'unit', 'code');
     }
 
     /**

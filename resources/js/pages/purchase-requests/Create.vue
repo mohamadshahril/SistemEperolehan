@@ -55,7 +55,7 @@ function submit() {
 
       <div class="rounded-md border bg-white p-6">
         <form @submit.prevent="submit" class="space-y-6">
-          <Form v-model="modelProxy" :options="props.options" />
+          <component :is="Form" v-model="modelProxy" :options="props.options" />
 
           <div>
             <label class="block text-sm font-medium">Attachment (optional)</label>

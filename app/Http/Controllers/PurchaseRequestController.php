@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\ItemUnit;
+use App\Models\PurchaseItem;
 use App\Models\PurchaseRequest;
 use App\Models\FileReference;
 use App\Models\Status;
@@ -19,6 +21,7 @@ class PurchaseRequestController extends Controller
      */
     public function index(Request $request)
     {
+
         $user = $request->user();
 
         $validated = $request->validate([
@@ -291,7 +294,7 @@ class PurchaseRequestController extends Controller
                 DB::raw("name as unit_description")
             )
             ->where('status', 1)
-            ->orderBy('code')
+            ->orderBy('unit_code')
             ->get();
 
         $user = auth()->user();
@@ -400,6 +403,9 @@ class PurchaseRequestController extends Controller
             // Generate purchase reference no after we have an ID
             $purchaseRequest->purchase_ref_no = $this->generatePurchaseRefNo($purchaseRequest);
             $purchaseRequest->save();
+
+            // Propagate purchase_ref_no to child items for reporting consistency
+            $purchaseRequest->items()->update(['purchase_ref_no' => $purchaseRequest->purchase_ref_no]);
         });
 
         return redirect()
@@ -423,6 +429,15 @@ class PurchaseRequestController extends Controller
         $vots = DB::table('vots')
             ->select('id', 'vot_code', 'vot_description')
             ->orderBy('vot_code')
+            ->get();
+        $itemUnits = DB::table('item_units')
+            ->select(
+                'id',
+                DB::raw("code as unit_code"),
+                DB::raw("name as unit_description")
+            )
+            ->where('status', 1)
+            ->orderBy('unit_code')
             ->get();
 
         return Inertia::render('purchase-requests/Edit', [
@@ -471,6 +486,7 @@ class PurchaseRequestController extends Controller
                 'type_procurements' => $typeProcurements,
                 'file_references' => $fileReferences,
                 'vots' => $vots,
+                'item_units' => $itemUnits,
             ],
         ]);
     }
@@ -478,7 +494,7 @@ class PurchaseRequestController extends Controller
     /**
      * Show a single purchase request in read-only mode for the owner
      */
-    public function show(Request $request, PurchaseRequest $purchaseRequest)
+    public function show(Request $request, PurchaseRequest $purchaseRequest, PurchaseItem $purchaseItem)
     {
         // Ownership check
         abort_if($purchaseRequest->user_id !== $request->user()->id, 403);
@@ -496,6 +512,18 @@ class PurchaseRequestController extends Controller
             ->select('id', 'vot_code', 'vot_description')
             ->where('id', $purchaseRequest->vot_id)
             ->get();
+        // Load item units (active only) for displaying unit codes in read-only view
+        $itemUnits = DB::table('item_units')
+            ->select(
+                'id',
+                DB::raw("code as unit_code"),
+                DB::raw("name as unit_description")
+            )
+            ->where('status', 1)
+            ->orderBy('unit_code')
+            ->get();
+
+        $user = auth()->user();
 
         return Inertia::render('purchase-requests/Show', [
             'request' => [
@@ -540,7 +568,13 @@ class PurchaseRequestController extends Controller
                 'type_procurements' => $typeProcurements,
                 'file_references' => $fileReferences,
                 'vots' => $vots,
+                'item_units' => $itemUnits,
             ],
+            'current_user' => [
+                'name' => $user?->name,
+                'location_iso_code' => $user?->location_iso_code,
+            ],
+            'today' => now()->toDateString(),
         ]);
     }
 
@@ -572,7 +606,7 @@ class PurchaseRequestController extends Controller
             'item.*.details' => ['required', 'string', 'max:500'],
             'item.*.purpose' => ['nullable', 'string', 'max:500'],
             'item.*.item_code' => ['nullable', 'string', 'max:100'],
-            'item.*.unit' => ['nullable', 'string', 'max:50'],
+            'item.*.unit' => ['nullable', 'string', 'max:50', Rule::exists('item_units', 'code')],
             'item.*.quantity' => ['required', 'integer', 'min:1'],
             'item.*.price' => ['required', 'numeric', 'min:0'],
             'attachment' => ['nullable', 'file', 'mimes:pdf,jpg,jpeg,png,doc,docx,xls,xlsx', 'max:5120'],
@@ -617,6 +651,7 @@ class PurchaseRequestController extends Controller
             $purchaseRequest->items()->delete();
             foreach ($validated['item'] as $row) {
                 $purchaseRequest->items()->create([
+                    'purchase_ref_no' => $purchaseRequest->purchase_ref_no,
                     'item_name'   => $row['details'],
                     'item_code'   => $row['item_code'] ?? null,
                     'purpose'     => $row['purpose'] ?? null,

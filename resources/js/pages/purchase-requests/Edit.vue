@@ -81,7 +81,7 @@ function submit() {
         </div>
 
         <form @submit.prevent="submit" class="space-y-6">
-          <Form v-model="modelProxy" :options="props.options" :read-only="!props.canEdit" />
+          <component :is="Form" v-model="modelProxy" :options="props.options" :read-only="!props.canEdit" />
 
           <div>
             <label class="block text-sm font-medium">Replace Attachment (optional)</label>

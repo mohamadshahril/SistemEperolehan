@@ -201,7 +201,7 @@ function destroyRequest(id: number) {
                 <div class="flex items-center gap-2">
                   <IconButton :icon="Eye" title="View" :href="`/purchase-requests/${req.id}`" />
                   <IconButton v-if="(req.status||'').toLowerCase() === 'pending'" :icon="Pencil" title="Edit" :href="`/purchase-requests/${req.id}/edit`" />
-                  <IconButton :icon="Printer" title="Print" :href="`/purchase-requests/${req.id}?print=1`" external />
+                  <IconButton :icon="Printer" title="Print" :href="`/purchase-requests/${req.id}?print=1`"/>
                   <IconButton v-if="(req.status||'').toLowerCase() === 'pending'" :icon="Trash2" title="Delete" variant="danger" @click="() => destroyRequest(req.id)" />
                 </div>
               </td>
