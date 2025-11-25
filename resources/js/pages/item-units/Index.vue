@@ -5,7 +5,7 @@ import { reactive } from 'vue'
 
 const props = defineProps<{
   units: {
-    data: Array<{ id: number; code: string; name: string; status: number; description?: string | null }>
+    data: Array<{ id: number; unit_code: string; name: string; status: number; description?: string | null }>
     links: Array<{ url: string | null; label: string; active: boolean }>
   }
   filters: { search?: string | null; status?: string | null; sort_by?: string | null; sort_dir?: 'asc' | 'desc' | null; per_page?: number | null }
@@ -89,7 +89,7 @@ function destroyUnit(id: number) {
         <table class="min-w-full divide-y">
           <thead class="bg-muted/30">
             <tr>
-              <th class="px-4 py-2 text-left text-sm font-medium"><button @click="sortBy('code')" class="hover:underline">Code</button></th>
+              <th class="px-4 py-2 text-left text-sm font-medium"><button @click="sortBy('unit_code')" class="hover:underline">Code</button></th>
               <th class="px-4 py-2 text-left text-sm font-medium"><button @click="sortBy('name')" class="hover:underline">Name</button></th>
               <th class="px-4 py-2 text-left text-sm font-medium">Description</th>
               <th class="px-4 py-2 text-left text-sm font-medium"><button @click="sortBy('status')" class="hover:underline">Status</button></th>
@@ -98,7 +98,7 @@ function destroyUnit(id: number) {
           </thead>
           <tbody>
             <tr v-for="row in props.units.data" :key="row.id" class="odd:bg-white even:bg-muted/10">
-              <td class="px-4 py-2 font-mono">{{ row.code }}</td>
+              <td class="px-4 py-2 font-mono">{{ row.unit_code }}</td>
               <td class="px-4 py-2">{{ row.name }}</td>
               <td class="px-4 py-2 text-sm text-muted-foreground">{{ row.description || '-' }}</td>
               <td class="px-4 py-2">

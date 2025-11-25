@@ -4,6 +4,7 @@ import { computed } from 'vue'
 type Option = { id: number; [k: string]: unknown }
 
 const props = defineProps<{
+
   modelValue: {
     id?: number
     title: string
@@ -33,6 +34,7 @@ const props = defineProps<{
     item_units?: Array<{ id: number; unit_code: string; unit_description: string }>
   }
   readOnly?: boolean
+
 }>()
 
 const emit = defineEmits<{

@@ -24,17 +24,6 @@ class PurchaseRequestController extends Controller
 
         $user = $request->user();
 
-        $validated = $request->validate([
-            'search' => ['nullable', 'string'],
-            'status' => ['nullable', 'string'],
-            'from_date' => ['nullable', 'date'],
-            'to_date' => ['nullable', 'date', 'after_or_equal:from_date'],
-            'sort_by' => ['nullable', Rule::in(['id', 'title', 'budget', 'submitted_at', 'status', 'purchase_ref_no'])],
-            'sort_dir' => ['nullable', Rule::in(['asc', 'desc'])],
-            'page' => ['nullable', 'integer', 'min:1'],
-            'per_page' => ['nullable', 'integer', 'min:1', 'max:100'],
-        ]);
-
         // Show only requests for the current applicant (by applicant_id matching user's staff_id)
         // Fallback to user_id when staff_id is not set to keep backward compatibility
         $query = PurchaseRequest::query()
@@ -290,7 +279,7 @@ class PurchaseRequestController extends Controller
         $itemUnits = DB::table('item_units')
             ->select(
                 'id',
-                DB::raw("code as unit_code"),
+                DB::raw("unit_code"),
                 DB::raw("name as unit_description")
             )
             ->where('status', 1)
@@ -433,12 +422,14 @@ class PurchaseRequestController extends Controller
         $itemUnits = DB::table('item_units')
             ->select(
                 'id',
-                DB::raw("code as unit_code"),
+                DB::raw("unit_code"),
                 DB::raw("name as unit_description")
             )
             ->where('status', 1)
             ->orderBy('unit_code')
             ->get();
+
+        $user = auth()->user();
 
         return Inertia::render('purchase-requests/Edit', [
             'request' => [
@@ -488,13 +479,19 @@ class PurchaseRequestController extends Controller
                 'vots' => $vots,
                 'item_units' => $itemUnits,
             ],
+
+            'current_user' => [
+                'name' => $user?->name,
+                'location_iso_code' => $user?->location_iso_code,
+            ],
+            'today' => now()->toDateString(),
         ]);
     }
 
     /**
      * Show a single purchase request in read-only mode for the owner
      */
-    public function show(Request $request, PurchaseRequest $purchaseRequest, PurchaseItem $purchaseItem)
+    public function show(Request $request, PurchaseRequest $purchaseRequest)
     {
         // Ownership check
         abort_if($purchaseRequest->user_id !== $request->user()->id, 403);
@@ -516,7 +513,7 @@ class PurchaseRequestController extends Controller
         $itemUnits = DB::table('item_units')
             ->select(
                 'id',
-                DB::raw("code as unit_code"),
+                DB::raw("unit_code"),
                 DB::raw("name as unit_description")
             )
             ->where('status', 1)
@@ -606,7 +603,7 @@ class PurchaseRequestController extends Controller
             'item.*.details' => ['required', 'string', 'max:500'],
             'item.*.purpose' => ['nullable', 'string', 'max:500'],
             'item.*.item_code' => ['nullable', 'string', 'max:100'],
-            'item.*.unit' => ['nullable', 'string', 'max:50', Rule::exists('item_units', 'code')],
+            'item.*.unit' => ['nullable', 'string', 'max:50', Rule::exists('item_units', 'unit_code')],
             'item.*.quantity' => ['required', 'integer', 'min:1'],
             'item.*.price' => ['required', 'numeric', 'min:0'],
             'attachment' => ['nullable', 'file', 'mimes:pdf,jpg,jpeg,png,doc,docx,xls,xlsx', 'max:5120'],
@@ -715,4 +712,5 @@ class PurchaseRequestController extends Controller
         //location per requirement
         return sprintf('AIM/%s/%s/%s/%d', $locationPart, $fileCode, $votCode, $running);
     }
+
 }

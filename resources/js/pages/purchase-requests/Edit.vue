@@ -3,6 +3,9 @@ import AppLayout from '@/layouts/AppLayout.vue'
 import { Head, Link, useForm } from '@inertiajs/vue3'
 import { computed } from 'vue'
 import Form from '@/components/purchase-requests/Form.vue'
+import { Eye } from 'lucide-vue-next';
+import IconButton from '@/components/IconButton.vue';
+import RequestInfoCard from '@/components/purchase-requests/RequestInfoCard.vue';
 
 const props = defineProps<{
   request: {
@@ -17,15 +20,20 @@ const props = defineProps<{
     purpose?: string | null
     item: Array<{ details: string; purpose?: string | null; quantity: number | string; price: number | string; item_code?: string | null; unit?: string | null }>
     items?: Array<{ details: string; purpose?: string | null; quantity: number | string; price: number | string; item_code?: string | null; unit?: string | null }>
-    attachment_url?: string | null
-    status?: string
+    attachment_url?: string | null;
+    status?: string;
+    purchase_ref_no?: string | null;
+    submitted_at?: string | null;
   }
+
   canEdit: boolean
   options: {
     type_procurements: Array<{ id: number; procurement_code: string; procurement_description: string }>
     file_references: Array<{ id: number; file_code: string; file_description: string }>
     vots: Array<{ id: number; vot_code: string; vot_description: string }>
   }
+    current_user?: { name?: string | null; location_iso_code?: string | null };
+    today?: string;
 }>()
 
 const form = useForm({
@@ -58,6 +66,7 @@ function submit() {
     preserveScroll: true,
   })
 }
+
 </script>
 
 <template>
@@ -69,10 +78,14 @@ function submit() {
     <div class="p-4">
       <div class="mb-4 flex items-center justify-between">
         <div>
-          <h1 class="text-2xl font-semibold">Edit Purchase Request</h1>
-          <p class="text-sm text-muted-foreground">Status: <span class="rounded bg-gray-100 px-2 py-0.5">{{ props.request.status }}</span></p>
+          <h1 class="p-3 text-2xl font-semibold">Edit Purchase Request#{{ props.request.id }}
+          </h1>
+            <RequestInfoCard
+                :request="props.request"
+                :current-user="props.current_user"
+            />
         </div>
-        <a :href="`/purchase-requests/${props.request.id}`" class="rounded-md border px-3 py-2">View</a>
+          <IconButton :icon="Eye" title="View" :href="`/purchase-requests/${props.request.id}`" />
       </div>
 
       <div class="rounded-md border bg-white p-6">
@@ -81,7 +94,13 @@ function submit() {
         </div>
 
         <form @submit.prevent="submit" class="space-y-6">
-          <component :is="Form" v-model="modelProxy" :options="props.options" :read-only="!props.canEdit" />
+
+            <div class="mb-4" v-if="props.request.purchase_ref_no">
+                <label class="text-lg font-bold">Ref No: </label>
+                {{ props.request.purchase_ref_no }}
+            </div>
+
+          <Form :is="Form" v-model="modelProxy" :options="props.options" :read-only="!props.canEdit" />
 
           <div>
             <label class="block text-sm font-medium">Replace Attachment (optional)</label>

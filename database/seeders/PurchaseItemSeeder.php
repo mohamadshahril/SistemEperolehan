@@ -47,10 +47,14 @@ class PurchaseItemSeeder extends Seeder
                             }
                             $remaining = max(0, $remaining - $totalPrice);
 
+                            // Generate random item_code (e.g., ITM-ABC123)
+                            $itemCode = 'ITM-' . strtoupper(substr(md5(uniqid((string) mt_rand(), true)), 0, 6));
+
+
                             $pr->items()->create([
                                 'purchase_ref_no' => $pr->purchase_ref_no,
                                 'item_name' => 'Sample Item ' . $i,
-                                'item_code' => null,
+                                'item_code' => $itemCode,
                                 'purpose' => 'Seeded data for testing',
                                 'unit' => 'pcs',
                                 'quantity' => $quantity,
