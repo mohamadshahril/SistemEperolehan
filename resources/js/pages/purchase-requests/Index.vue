@@ -160,6 +160,7 @@ function destroyRequest(id: number) {
         <table class="min-w-full divide-y">
           <thead class="bg-muted/30">
             <tr>
+             <th class="px-4 py-2 text-left text-sm font-medium"><button @click="sortBy('id')" class="hover:underline">ID</button></th>
               <!-- Ref No column is now sortable by purchase_ref_no -->
               <th class="px-4 py-2 text-left text-sm font-medium">
                 <button @click="sortBy('purchase_ref_no')" class="hover:underline">Ref No</button>
@@ -172,20 +173,22 @@ function destroyRequest(id: number) {
               <th class="px-4 py-2 text-left text-sm font-medium">Actions</th>
             </tr>
           </thead>
-          <tbody>
+          <tbody class="divide-y">
             <tr v-for="req in props.requests.data" :key="req.id" class="odd:bg-white even:bg-muted/10">
+                <td  class="px-4 py-2">
+                    <div class="text-xs text-muted-foreground">#{{ req.id }}</div>
+                </td>
               <!-- Ref No column -->
               <td class="px-4 py-2">{{ req.purchase_ref_no || '-' }}</td>
               <td class="px-4 py-2">
                 <div class="font-medium">{{ req.title }}</div>
-                <div class="text-xs text-muted-foreground">ID: #{{ req.id }}</div>
               </td>
-              <td class="px-4 py-2">{{ req.submitted_at ? new Date(req.submitted_at).toLocaleString() : '-' }}</td>
+              <td class="px-4 py-2">{{ req.submitted_at ? new Date(req.submitted_at).toLocaleString('en-MY') : '-' }}</td>
               <td class="px-4 py-2">
                 <span class="rounded px-2 py-1 text-xs" :class="statusClass(req.status)">{{ req.status }}</span>
               </td>
               <td class="px-4 py-2">{{ Number(req.budget).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }}</td>
-              <td class="px-4 py-2">
+                <td class="px-4 py-2">
                 <div class="flex items-center">
                   <!-- Show attachment icon only when an attachment exists -->
                   <IconButton

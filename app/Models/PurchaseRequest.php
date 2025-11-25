@@ -203,5 +203,10 @@ class PurchaseRequest extends Model
                 }
             }
         });
+
+        static::deleting(function ($purchaseRequest) {
+            $purchaseRequest->items()->delete();
+        });
+
     }
 }
