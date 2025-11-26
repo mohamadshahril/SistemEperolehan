@@ -25,16 +25,16 @@ const { request, currentUser } = defineProps<{
             </p>
         </div>
 
-        <!-- Status -->
-        <div>
+        <!-- Status (hidden if not provided) -->
+        <div v-if="request?.status">
             Status:
             <span class="rounded px-2 py-0.5" :class="statusClass(request.status)">
         {{ request.status }}
       </span>
         </div>
 
-        <!-- Submitted -->
-        <div v-if="request.submitted_at">
+        <!-- Submitted (hidden if not provided) -->
+        <div v-if="request?.submitted_at">
             Submitted:
             {{ new Date(request.submitted_at).toLocaleString('en-MY') }}
         </div>

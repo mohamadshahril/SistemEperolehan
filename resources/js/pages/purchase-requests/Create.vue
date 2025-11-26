@@ -3,6 +3,7 @@ import AppLayout from '@/layouts/AppLayout.vue'
 import { Head, Link, useForm } from '@inertiajs/vue3'
 import { computed } from 'vue'
 import Form from '@/components/purchase-requests/Form.vue'
+import RequestInfoCard from "@/components/purchase-requests/RequestInfoCard.vue";
 
 const props = defineProps<{
   options: {
@@ -47,15 +48,18 @@ function submit() {
   ]">
     <div class="p-4">
       <div class="mb-4">
-        <h1 class="text-2xl font-semibold">New Purchase Request</h1>
-        <p class="text-sm text-muted-foreground" v-if="props.current_user?.name">
-          Applicant: {{ props.current_user.name }} ({{ props.current_user.location_iso_code || '-' }})
-        </p>
+        <h1 class="p-3 text-2xl font-semibold">New Purchase Request</h1>
+
+          <RequestInfoCard
+              :request="{}"
+              :current-user="props.current_user"
+          />
+
       </div>
 
       <div class="rounded-md border bg-white p-6">
         <form @submit.prevent="submit" class="space-y-6">
-          <component :is="Form" v-model="modelProxy" :options="props.options" />
+          <Form :is="Form" v-model="modelProxy" :options="props.options" />
 
           <div>
             <label class="block text-sm font-medium">Attachment (optional)</label>
