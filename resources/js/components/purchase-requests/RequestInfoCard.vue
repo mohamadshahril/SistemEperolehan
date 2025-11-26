@@ -13,6 +13,7 @@ const { request, currentUser } = defineProps<{
         location_iso_code?: string | null;
     };
 }>();
+
 </script>
 
 <template>
