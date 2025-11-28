@@ -6,6 +6,7 @@ use App\Models\User;
 use App\Models\PurchaseRequest;
 use App\Models\Vendor;
 use App\Models\PurchaseOrder;
+use App\Models\DeliveryOrder;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
 
@@ -115,6 +116,11 @@ class DatabaseSeeder extends Seeder
         } catch (\Throwable $e) {
             // Ignore if tables not migrated yet
         }
+
+        // Seed delivery orders
+        $this->call([
+            DeliveryOrderSeeder::class,
+        ]);
 
     }
 }
