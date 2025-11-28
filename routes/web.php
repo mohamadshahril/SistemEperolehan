@@ -11,6 +11,7 @@ use App\Http\Controllers\VotController;
 use App\Http\Controllers\FileReferenceController;
 use App\Http\Controllers\TypeProcurementController;
 use App\Http\Controllers\ItemUnitController;
+use App\Http\Controllers\DeliveryOrderController;
 
 Route::get('/', function () {
     return Inertia::render('Welcome', [
@@ -61,6 +62,18 @@ Route::middleware(['auth','verified'])->group(function () {
     Route::get('approvals/{purchaseRequest}', [PurchaseRequestController::class, 'approvalsShow'])->name('approvals.show');
     Route::post('approvals/{purchaseRequest}/approve', [PurchaseRequestController::class, 'approve'])->name('approvals.approve');
     Route::post('approvals/{purchaseRequest}/reject', [PurchaseRequestController::class, 'reject'])->name('approvals.reject');
+    // ... other resource routes (e.g., 'locations')
+
+    // Delivery Orders Resource Route
+    Route::resource('delivery-orders', DeliveryOrderController::class);
+
+    // Custom route for Confirm Delivery (PATCH method)
+    Route::patch('delivery-orders/{delivery_order}/confirm', [DeliveryOrderController::class, 'confirm'])
+        ->name('delivery-orders.confirm');
+
+    // Custom route for Print Summary (GET method)
+    Route::get('delivery-orders/{delivery_order}/print', [DeliveryOrderController::class, 'printSummary'])
+        ->name('delivery-orders.print');
 });
 
 require __DIR__.'/settings.php';
