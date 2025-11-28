@@ -82,5 +82,46 @@ class DeliveryOrderController extends Controller
         // Alternatively, use a PDF generation library like Dompdf or Snappy for a server-side generated PDF.
     }
 
-    // You would also implement edit/update/destroy methods here
+    // Edit form
+    public function edit(DeliveryOrder $deliveryOrder)
+    {
+        $purchaseOrders = PurchaseOrder::select('id', 'order_number')->get();
+
+        return Inertia::render('delivery-orders/Edit', [
+            'deliveryOrder' => $deliveryOrder->load('purchaseOrder.vendor'),
+            'purchaseOrders' => $purchaseOrders,
+        ]);
+    }
+
+    // Update action
+    public function update(Request $request, DeliveryOrder $deliveryOrder)
+    {
+        $validated = $request->validate([
+            'purchase_order_id' => ['required', 'exists:purchase_orders,id'],
+            'do_number' => ['required', 'string', 'max:255', 'unique:delivery_orders,do_number,' . $deliveryOrder->id],
+            'delivery_date' => ['required', 'date'],
+            'delivery_file' => ['nullable', 'file', 'mimes:pdf,jpg,png', 'max:5120'],
+            'notes' => ['nullable', 'string'],
+        ]);
+
+        // Handle file replacement
+        if ($request->hasFile('delivery_file')) {
+            // delete old file if exists
+            if ($deliveryOrder->file_path) {
+                try {
+                    Storage::disk('public')->delete($deliveryOrder->file_path);
+                } catch (\Throwable $e) {
+                    // ignore deletion errors
+                }
+            }
+
+            $filePath = $request->file('delivery_file')->store('delivery_orders', 'public');
+            $validated['file_path'] = $filePath;
+        }
+
+        $deliveryOrder->update($validated);
+
+        return redirect()->route('delivery-orders.index')
+            ->with('success', 'Delivery Order updated successfully.');
+    }
 }
