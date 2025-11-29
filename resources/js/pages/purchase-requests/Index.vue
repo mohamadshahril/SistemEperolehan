@@ -106,7 +106,9 @@ function destroyRequest(id: number) {
         </div>
         <div>
           <label class="block text-sm font-medium">Status</label>
-          <select v-model="state.status" class="mt-1 block w-full rounded-md border p-2">
+          <select v-model="state.status" class="mt-1 block w-full rounded-md border p-2"
+                  @change="applyFilters({ page: 1 })"
+          >
             <option v-for="s in statusOptions" :key="s" :value="s">{{ s }}</option>
           </select>
         </div>
