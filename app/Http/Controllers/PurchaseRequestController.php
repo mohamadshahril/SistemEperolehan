@@ -207,11 +207,41 @@ class PurchaseRequestController extends Controller
      */
     public function approvalsShow(PurchaseRequest $purchaseRequest)
     {
-        // Eager load minimal relations for display
-        $purchaseRequest->load(['user:id,name,email']);
+        // Eager load relations for display
+        $purchaseRequest->load(['user:id,name,email', 'approvedBy:id,name', 'items']);
 
         return Inertia::render('approvals/Show', [
-            'request' => $purchaseRequest,
+            'request' => [
+                'id' => $purchaseRequest->id,
+                'title' => $purchaseRequest->title,
+                'budget' => $purchaseRequest->budget,
+                'purchase_ref_no' => $purchaseRequest->purchase_ref_no,
+                'items' => $purchaseRequest->items->map(function ($item, $index) {
+                    return [
+                        'item_no' => $index + 1,
+                        'details' => $item->item_name,
+                        'purpose' => $item->purpose,
+                        'quantity' => $item->quantity,
+                        'price' => $item->unit_price,
+                        'item_code' => $item->item_code,
+                        'unit' => $item->unit,
+                    ];
+                }),
+                'note' => $purchaseRequest->note,
+                'status' => $purchaseRequest->status,
+                'submitted_at' => $purchaseRequest->submitted_at,
+                'approval_remarks' => $purchaseRequest->approval_remarks,
+                'approved_at' => $purchaseRequest->approved_at,
+                'approved_by' => $purchaseRequest->approvedBy ? [
+                    'id' => $purchaseRequest->approvedBy->id,
+                    'name' => $purchaseRequest->approvedBy->name,
+                ] : null,
+                'user' => [
+                    'id' => $purchaseRequest->user->id,
+                    'name' => $purchaseRequest->user->name,
+                    'email' => $purchaseRequest->user->email,
+                ],
+            ],
         ]);
     }
 
@@ -319,7 +349,7 @@ class PurchaseRequestController extends Controller
             // Keep optional fields so they persist to DB when provided from the UI
             'item.*.item_code' => ['nullable', 'string', 'max:100'],
             // Unit must reference item_units.code when provided (frontend sends value from `unit_code` alias)
-            'item.*.unit' => ['nullable', 'string', 'max:50', Rule::exists('item_units', 'code')],
+            'item.*.unit' => ['nullable', 'string', 'max:50', Rule::exists('item_units', 'unit_code')],
             'item.*.quantity' => ['required', 'integer', 'min:1'],
             'item.*.price' => ['required', 'numeric', 'min:0'],
             'attachment' => ['nullable', 'file', 'mimes:pdf,jpg,jpeg,png,doc,docx,xls,xlsx', 'max:5120'],
