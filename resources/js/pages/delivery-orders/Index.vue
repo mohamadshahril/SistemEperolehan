@@ -47,6 +47,12 @@ const deleteDeliveryOrder = (id: number, doNumber: string) => {
         })
     }
 }
+
+// Function to format date in Malaysia format (DD/MM/YYYY)
+const formatDateMalaysia = (dateString: string) => {
+    const date = new Date(dateString)
+    return date.toLocaleDateString('ms-MY', { year: 'numeric', month: '2-digit', day: '2-digit' })
+}
 </script>
 
 <template>
@@ -77,7 +83,7 @@ const deleteDeliveryOrder = (id: number, doNumber: string) => {
                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ doItem.do_number }}</td>
                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ doItem.purchase_order.order_number }}</td>
                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ doItem.purchase_order.vendor.name }}</td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ doItem.delivery_date }}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ formatDateMalaysia(doItem.delivery_date) }}</td>
                             <td class="px-6 py-4 whitespace-nowrap">
                                 <span :class="{'bg-green-100 text-green-800': doItem.is_received, 'bg-yellow-100 text-yellow-800': !doItem.is_received}" class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full">
                                     {{ doItem.is_received ? 'Received' : 'Pending' }}

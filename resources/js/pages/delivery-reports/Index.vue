@@ -79,6 +79,13 @@ function goTo(url: string | null) {
   if (!url) return
   router.get(url, {}, { preserveState: true, preserveScroll: true })
 }
+
+
+// Function to format date in Malaysia format (DD/MM/YYYY)
+const formatDateMalaysia = (dateString: string) => {
+    const date = new Date(dateString)
+    return date.toLocaleDateString('ms-MY', { year: 'numeric', month: '2-digit', day: '2-digit' })
+}
 </script>
 
 <template>
@@ -163,7 +170,8 @@ function goTo(url: string | null) {
               <td class="px-4 py-2 font-mono">{{ row.do_number }}</td>
               <td class="px-4 py-2">{{ row.purchase_order.order_number }}</td>
               <td class="px-4 py-2">{{ row.purchase_order.vendor.name }}</td>
-              <td class="px-4 py-2">{{ row.delivery_date }}</td>
+              
+              <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ formatDateMalaysia(row.delivery_date) }}</td>
               <td class="px-4 py-2">
                 <span :class="row.is_received ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'" class="inline-flex rounded-full px-2 text-xs font-semibold leading-5">
                   {{ row.is_received ? 'Received' : 'Pending' }}
