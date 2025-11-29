@@ -27,6 +27,8 @@ import {
 } from 'lucide-vue-next';
 import AppLogo from './AppLogo.vue';
 
+const footerNavItems: NavItem[] = [];
+
 const mainNavItems: NavItem[] = [
     {
         title: 'Dashboard',
