@@ -1,127 +1,122 @@
 <script setup lang="ts">
 import AppLayout from '@/layouts/AppLayout.vue'
-import { Head } from '@inertiajs/vue3'
+import { Head, router } from '@inertiajs/vue3'
+import { reactive } from 'vue'
+import RequestHeader from '@/components/approval/RequestHeader.vue'
+import BudgetStatusCard from '@/components/approval/BudgetStatusCard.vue'
+import ItemsTable from '@/components/approval/ItemsTable.vue'
+import NotesSection from '@/components/approval/NotesSection.vue'
+import ApprovalSection from '@/components/approval/ApprovalSection.vue'
+import BackButton from '@/components/approval/BackButton.vue'
+
+interface Item {
+  item_no: number
+  details: string
+  purpose?: string | null
+  quantity: number
+  price: number | string
+}
+
+interface PurchaseRequest {
+  id: number
+  title: string
+  budget: number | string
+  purchase_ref_no?: string | null
+  items: Item[]
+  note: string | null
+  status: 'Pending' | 'Approved' | 'Rejected' | string
+  submitted_at: string | null
+  approval_remarks: string | null
+  approved_at?: string | null
+  approved_by?: { id: number; name: string }
+  user: { id: number; name: string; email: string }
+}
 
 const props = defineProps<{
-  request: {
-    id: number
-    title: string
-    budget: number | string
-    purchase_ref_no?: string | null
-    items: Array<{ item_no: number; details: string; purpose?: string | null; quantity: number; price: number | string }>
-    note: string | null
-    status: 'Pending' | 'Approved' | 'Rejected' | string
-    submitted_at: string | null
-    approval_remarks: string | null
-    approved_at?: string | null
-    approved_by?: number | null
-    user: { id: number; name: string; email: string }
-  }
+  request: PurchaseRequest
 }>()
 
-function badgeClasses(status: string) {
-  return {
-    'bg-amber-100 text-amber-800': status === 'Pending',
-    'bg-green-100 text-green-800': status === 'Approved',
-    'bg-red-100 text-red-800': status === 'Rejected',
-  }
+const state = reactive({
+  remarks: props.request.approval_remarks || '',
+  isLoading: false,
+})
+
+const submitAction = (action: 'approve' | 'reject') => {
+  if (state.isLoading) return
+  state.isLoading = true
+  const url = action === 'approve' ? `/approvals/${props.request.id}/approve` : `/approvals/${props.request.id}/reject`
+  const payload = { comment: state.remarks || undefined }
+  router.post(url, payload, {
+    preserveScroll: true,
+    onSuccess: () => {
+      state.remarks = ''
+      state.isLoading = false
+    },
+    onError: () => {
+      state.isLoading = false
+    },
+  })
+}
+
+const handleRemarksUpdate = (newRemarks: string) => {
+  state.remarks = newRemarks
 }
 </script>
 
 <template>
   <Head :title="`Approval PR #${props.request.id}`" />
-  <AppLayout :breadcrumbs="[
-    { title: 'Approval Purchase Requests', href: '/approvals' },
-    { title: `#${props.request.id}`, href: `/approvals/${props.request.id}` }
-  ]">
-    <div class="p-4">
-      <div class="mb-4 flex items-center justify-between gap-3">
-        <h1 class="text-2xl font-semibold">Approval PR #{{ props.request.id }}</h1>
-        <a href="/approvals" class="rounded-md border px-3 py-2">Back to list</a>
-      </div>
-
-      <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
-        <div class="space-y-3">
-          <div>
-            <div class="text-sm text-muted-foreground">Reference ID</div>
-            <div class="font-mono">#{{ props.request.id }}</div>
-          </div>
-          <div>
-            <div class="text-sm text-muted-foreground">Applicant's Name</div>
-            <div>{{ props.request.user.name }} <span class="text-muted-foreground">({{ props.request.user.email }})</span></div>
-          </div>
-          <div>
-            <div class="text-sm text-muted-foreground">Title</div>
-            <div>{{ props.request.title }}</div>
-          </div>
-          <div>
-            <div class="text-sm text-muted-foreground">Budget</div>
-            <div>{{ 'RM ' + Number(props.request.budget).toLocaleString('en-MY', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }}</div>
-          </div>
-          <div v-if="props.request.purchase_ref_no">
-            <div class="text-sm text-muted-foreground">Purchase Ref No</div>
-            <div class="font-mono">{{ props.request.purchase_ref_no }}</div>
-          </div>
+  <AppLayout
+    :breadcrumbs="[
+      { title: 'Approval Purchase Requests', href: '/approvals' },
+      { title: `#${props.request.id}`, href: `/approvals/${props.request.id}` },
+    ]"
+  >
+    <div class="space-y-6 p-4">
+      <!-- Page Header -->
+      <div class="flex flex-col items-start justify-between gap-4 md:flex-row md:items-center">
+        <div>
+          <h1 class="text-3xl font-bold">Purchase Request Details</h1>
+          <p class="mt-1 text-muted-foreground">Review and approve this purchase request</p>
         </div>
-
-        <div class="space-y-3">
-          <div>
-            <div class="text-sm text-muted-foreground">Status</div>
-            <span class="inline-flex items-center rounded-full px-2 py-1 text-xs font-medium"
-                  :class="badgeClasses(props.request.status)">
-              {{ props.request.status }}
-            </span>
-          </div>
-          <div>
-            <div class="text-sm text-muted-foreground">Submitted</div>
-            <div>{{ props.request.submitted_at ? new Date(props.request.submitted_at).toLocaleString() : '-' }}</div>
-          </div>
-          <div v-if="props.request.status !== 'Pending'">
-            <div class="text-sm text-muted-foreground">Approved/Rejected At</div>
-            <div>{{ props.request.approved_at ? new Date(props.request.approved_at).toLocaleString() : '-' }}</div>
-          </div>
-        </div>
+        <BackButton href="/approvals" label="Back to Requests" />
       </div>
 
-      <div class="mt-6">
-        <div class="text-sm text-muted-foreground">Notes</div>
-        <div class="whitespace-pre-wrap">{{ props.request.note || '-' }}</div>
-      </div>
+      <!-- Request Header Section -->
+      <RequestHeader
+        :id="props.request.id"
+        :applicant-name="props.request.user.name"
+        :applicant-email="props.request.user.email"
+        :title="props.request.title"
+        :purchase-ref-no="props.request.purchase_ref_no"
+        :submitted-at="props.request.submitted_at"
+      />
 
-      <div class="mt-6">
-        <div class="text-sm text-muted-foreground">Items</div>
-        <div class="overflow-x-auto rounded-md border">
-          <table class="min-w-full divide-y">
-            <thead>
-              <tr>
-                <th class="px-3 py-2 text-left">No.</th>
-                <th class="px-3 py-2 text-left">Details</th>
-                <th class="px-3 py-2 text-left">Purpose</th>
-                <th class="px-3 py-2 text-right">Qty</th>
-                <th class="px-3 py-2 text-right">Price (RM)</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr v-for="(it, idx) in props.request.items" :key="idx" class="border-b">
-                <td class="px-3 py-2">{{ it.item_no }}</td>
-                <td class="px-3 py-2">{{ it.details }}</td>
-                <td class="px-3 py-2">{{ it.purpose || '-' }}</td>
-                <td class="px-3 py-2 text-right">{{ it.quantity }}</td>
-                <td class="px-3 py-2 text-right">{{ Number(it.price).toLocaleString('en-MY', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }}</td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
+      <!-- Budget & Status Card -->
+      <BudgetStatusCard
+        :budget="props.request.budget"
+        :status="props.request.status"
+        :submitted-at="props.request.submitted_at"
+        :approved-at="props.request.approved_at"
+        :approved-by="props.request.approved_by"
+      />
 
-      <div class="mt-6">
-        <div class="text-sm text-muted-foreground">Approval Remarks</div>
-        <div class="whitespace-pre-wrap">{{ props.request.approval_remarks || '-' }}</div>
-      </div>
+      <!-- Items Table Section -->
+      <ItemsTable :items="props.request.items" title="Requested Items" :show-total="true" />
+
+      <!-- Notes Section -->
+      <NotesSection :notes="props.request.note" title="Request Notes & Details" />
+
+      <!-- Approval Section -->
+      <ApprovalSection
+        :request-id="props.request.id"
+        :status="props.request.status"
+        :remarks="state.remarks"
+        :loading="state.isLoading"
+        @update:remarks="handleRemarksUpdate"
+        @approve="submitAction('approve')"
+        @reject="submitAction('reject')"
+      />
     </div>
   </AppLayout>
 </template>
 
-<style scoped>
-.text-muted-foreground { color: #6b7280; }
-</style>
