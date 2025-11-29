@@ -1,13 +1,29 @@
 <script setup lang="ts">
 import AppLayout from '@/layouts/AppLayout.vue'
 import { Head, Link, useForm } from '@inertiajs/vue3'
+import { computed } from 'vue'
+import { countries, getStatesByCountry, type State } from '@/data/countries-states'
 
 const form = useForm({
   name: '',
   email: '',
   phone: '',
-  address: '',
+  address_line1: '',
+  address_line2: '',
+  city: '',
+  state: '',
+  postcode: '',
+  country: 'MY', // Default to Malaysia
 })
+
+const availableStates = computed<State[]>(() => {
+  return getStatesByCountry(form.country)
+})
+
+// Reset state when country changes
+function onCountryChange() {
+  form.state = ''
+}
 
 function submit() {
   form.post('/vendors', {
@@ -67,15 +83,102 @@ function submit() {
               <p v-if="form.errors.phone" class="mt-1 text-sm text-red-600">{{ form.errors.phone }}</p>
             </div>
 
-            <div>
-              <label class="block text-sm font-medium">Address</label>
-              <textarea
-                v-model="form.address"
-                rows="3"
-                class="mt-1 block w-full rounded-md border p-2"
-                :class="{ 'border-red-500': form.errors.address }"
-              ></textarea>
-              <p v-if="form.errors.address" class="mt-1 text-sm text-red-600">{{ form.errors.address }}</p>
+            <!-- Address Section -->
+            <div class="space-y-4 rounded-md border p-4">
+              <h3 class="text-lg font-medium">Address Information</h3>
+              
+              <div>
+                <label class="block text-sm font-medium">Address Line 1 (Street, Building/Factory Number) <span class="text-red-600">*</span></label>
+                <input
+                  v-model="form.address_line1"
+                  type="text"
+                  required
+                  placeholder="e.g., 123 Jalan Merdeka, Taman Industri"
+                  class="mt-1 block w-full rounded-md border p-2"
+                  :class="{ 'border-red-500': form.errors.address_line1 }"
+                />
+                <p v-if="form.errors.address_line1" class="mt-1 text-sm text-red-600">{{ form.errors.address_line1 }}</p>
+              </div>
+
+              <div>
+                <label class="block text-sm font-medium">Address Line 2 (Unit, Suite, Floor)</label>
+                <input
+                  v-model="form.address_line2"
+                  type="text"
+                  placeholder="e.g., Unit 5A, Floor 2"
+                  class="mt-1 block w-full rounded-md border p-2"
+                  :class="{ 'border-red-500': form.errors.address_line2 }"
+                />
+                <p v-if="form.errors.address_line2" class="mt-1 text-sm text-red-600">{{ form.errors.address_line2 }}</p>
+              </div>
+
+              <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
+                <div>
+                  <label class="block text-sm font-medium">Country <span class="text-red-600">*</span></label>
+                  <select
+                    v-model="form.country"
+                    required
+                    @change="onCountryChange"
+                    class="mt-1 block w-full rounded-md border p-2"
+                    :class="{ 'border-red-500': form.errors.country }"
+                  >
+                    <option value="">Select Country</option>
+                    <option v-for="country in countries" :key="country.code" :value="country.code">
+                      {{ country.name }}
+                    </option>
+                  </select>
+                  <p v-if="form.errors.country" class="mt-1 text-sm text-red-600">{{ form.errors.country }}</p>
+                </div>
+
+                <div>
+                  <label class="block text-sm font-medium">State/Province <span class="text-red-600">*</span></label>
+                  <select
+                    v-model="form.state"
+                    required
+                    :disabled="!form.country || availableStates.length === 0"
+                    class="mt-1 block w-full rounded-md border p-2 disabled:bg-gray-100"
+                    :class="{ 'border-red-500': form.errors.state }"
+                  >
+                    <option value="">Select State</option>
+                    <option v-for="state in availableStates" :key="state.code" :value="state.code">
+                      {{ state.name }}
+                    </option>
+                  </select>
+                  <p v-if="form.errors.state" class="mt-1 text-sm text-red-600">{{ form.errors.state }}</p>
+                  <p v-if="!form.country" class="mt-1 text-xs text-gray-500">Please select a country first</p>
+                </div>
+              </div>
+
+              <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
+                <div>
+                  <label class="block text-sm font-medium">City <span class="text-red-600">*</span></label>
+                  <input
+                    v-model="form.city"
+                    type="text"
+                    required
+                    placeholder="e.g., Kuala Lumpur"
+                    class="mt-1 block w-full rounded-md border p-2"
+                    :class="{ 'border-red-500': form.errors.city }"
+                  />
+                  <p v-if="form.errors.city" class="mt-1 text-sm text-red-600">{{ form.errors.city }}</p>
+                </div>
+
+                <div>
+                  <label class="block text-sm font-medium">Postcode/ZIP <span class="text-red-600">*</span></label>
+                  <input
+                    v-model="form.postcode"
+                    type="text"
+                    required
+                    :placeholder="form.country === 'MY' ? 'e.g., 50000' : 'e.g., Postcode'"
+                    :pattern="form.country === 'MY' ? '[0-9]{5}' : undefined"
+                    :maxlength="form.country === 'MY' ? 5 : 20"
+                    class="mt-1 block w-full rounded-md border p-2"
+                    :class="{ 'border-red-500': form.errors.postcode }"
+                  />
+                  <p v-if="form.errors.postcode" class="mt-1 text-sm text-red-600">{{ form.errors.postcode }}</p>
+                  <p v-if="form.country === 'MY'" class="mt-1 text-xs text-gray-500">5 digits for Malaysia</p>
+                </div>
+              </div>
             </div>
           </div>
 

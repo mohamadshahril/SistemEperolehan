@@ -23,13 +23,17 @@ class VendorController extends Controller
 
         $query = Vendor::query();
 
-        // Search by name, email, or phone
+        // Search by name, email, phone, or address
         if ($search = $request->string('search')->toString()) {
             $query->where(function ($q) use ($search) {
                 $q->where('name', 'like', "%{$search}%")
                     ->orWhere('email', 'like', "%{$search}%")
                     ->orWhere('phone', 'like', "%{$search}%")
-                    ->orWhere('address', 'like', "%{$search}%");
+                    ->orWhere('address', 'like', "%{$search}%")
+                    ->orWhere('address_line1', 'like', "%{$search}%")
+                    ->orWhere('city', 'like', "%{$search}%")
+                    ->orWhere('state', 'like', "%{$search}%")
+                    ->orWhere('postcode', 'like', "%{$search}%");
             });
         }
 
@@ -54,7 +58,13 @@ class VendorController extends Controller
             'name' => ['required', 'string', 'max:255'],
             'email' => ['nullable', 'email', 'max:255'],
             'phone' => ['nullable', 'string', 'regex:/^[0-9+\-\s()]+$/', 'max:20'],
-            'address' => ['nullable', 'string', 'max:500'],
+            'address' => ['nullable', 'string', 'max:500'], // Deprecated - kept for backward compatibility
+            'address_line1' => ['required', 'string', 'max:255'],
+            'address_line2' => ['nullable', 'string', 'max:255'],
+            'city' => ['required', 'string', 'max:100'],
+            'state' => ['required', 'string', 'max:100'],
+            'postcode' => ['required', 'string', 'max:20'],
+            'country' => ['required', 'string', 'size:2'], // ISO 3166-1 alpha-2
         ]);
 
         $vendor = Vendor::create($validated);
@@ -82,7 +92,13 @@ class VendorController extends Controller
             'name' => ['required', 'string', 'max:255'],
             'email' => ['nullable', 'email', 'max:255'],
             'phone' => ['nullable', 'string', 'regex:/^[0-9+\-\s()]+$/', 'max:20'],
-            'address' => ['nullable', 'string', 'max:500'],
+            'address' => ['nullable', 'string', 'max:500'], // Deprecated - kept for backward compatibility
+            'address_line1' => ['required', 'string', 'max:255'],
+            'address_line2' => ['nullable', 'string', 'max:255'],
+            'city' => ['required', 'string', 'max:100'],
+            'state' => ['required', 'string', 'max:100'],
+            'postcode' => ['required', 'string', 'max:20'],
+            'country' => ['required', 'string', 'size:2'], // ISO 3166-1 alpha-2
         ]);
 
         $vendor->update($validated);
