@@ -124,4 +124,23 @@ class DeliveryOrderController extends Controller
         return redirect()->route('delivery-orders.index')
             ->with('success', 'Delivery Order updated successfully.');
     }
+
+    // Delete action
+    public function destroy(DeliveryOrder $deliveryOrder)
+    {
+        // Delete attached file if exists
+        if ($deliveryOrder->file_path) {
+            try {
+                Storage::disk('public')->delete($deliveryOrder->file_path);
+            } catch (\Throwable $e) {
+                // ignore deletion errors
+            }
+        }
+
+        $doNumber = $deliveryOrder->do_number;
+        $deliveryOrder->delete();
+
+        return redirect()->route('delivery-orders.index')
+            ->with('success', 'Delivery Order ' . $doNumber . ' deleted successfully.');
+    }
 }

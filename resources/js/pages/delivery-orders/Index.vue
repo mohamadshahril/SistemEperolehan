@@ -38,6 +38,15 @@ const viewFile = (filePath: string | null) => {
         window.open('/storage/' + filePath, '_blank')
     }
 }
+
+// Function to delete a delivery order
+const deleteDeliveryOrder = (id: number, doNumber: string) => {
+    if (confirm(`Are you sure you want to delete Delivery Order ${doNumber}? This action cannot be undone.`)) {
+        router.delete(`/delivery-orders/${id}`, {
+            preserveScroll: true,
+        })
+    }
+}
 </script>
 
 <template>
@@ -91,6 +100,10 @@ const viewFile = (filePath: string | null) => {
                                 <Link :href="`/delivery-orders/${doItem.id}/print`" target="_blank" class="text-purple-600 hover:text-purple-900">
                                     Print
                                 </Link>
+
+                                <button @click="deleteDeliveryOrder(doItem.id, doItem.do_number)" class="text-red-600 hover:text-red-900">
+                                    Delete
+                                </button>
                             </td>
                         </tr>
                         <tr v-if="props.deliveryOrders.data.length === 0">
