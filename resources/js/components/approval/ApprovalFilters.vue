@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { reactive } from 'vue'
 import { RotateCcw } from 'lucide-vue-next'
-import { router } from '@inertiajs/vue3';
 
 interface Props {
   search?: string
@@ -66,6 +65,7 @@ const handleReset = () => {
         placeholder="Ref, employee, title, code, status or date (YYYY-MM-DD)"
         class="mt-1 block w-full rounded-md border p-2"
         @keyup.enter="handleApply"
+        @change="handleStatusChange"
       />
     </div>
     <div>
@@ -79,11 +79,13 @@ const handleReset = () => {
     </div>
     <div>
       <label class="block text-sm font-medium">From date</label>
-      <input v-model="filters.fromDate" type="date" class="mt-1 block w-full rounded-md border p-2" />
+      <input v-model="filters.fromDate" type="date" class="mt-1 block w-full rounded-md border p-2"
+             @change="handleStatusChange"/>
     </div>
     <div>
       <label class="block text-sm font-medium">To date</label>
-      <input v-model="filters.toDate" type="date" class="mt-1 block w-full rounded-md border p-2" />
+      <input v-model="filters.toDate" type="date" class="mt-1 block w-full rounded-md border p-2"
+             @change="handleStatusChange"/>
     </div>
     <div class="flex items-end gap-2">
       <button
