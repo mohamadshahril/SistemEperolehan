@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { reactive } from 'vue'
 import { RotateCcw } from 'lucide-vue-next'
+import { router } from '@inertiajs/vue3';
 
 interface Props {
   search?: string
@@ -42,6 +43,10 @@ const handleApply = () => {
   })
 }
 
+const handleStatusChange = () => {
+  handleApply()
+}
+
 const handleReset = () => {
   filters.search = ''
   filters.fromDate = ''
@@ -65,7 +70,8 @@ const handleReset = () => {
     </div>
     <div>
       <label class="block text-sm font-medium">Status</label>
-      <select v-model="filters.status" class="mt-1 block w-full rounded-md border p-2">
+      <select v-model="filters.status" class="mt-1 block w-full rounded-md border p-2" @change="handleStatusChange">
+
         <option v-for="s in props.statuses" :key="s" :value="s">
           {{ s }}
         </option>
@@ -96,4 +102,3 @@ const handleReset = () => {
     </div>
   </div>
 </template>
-
