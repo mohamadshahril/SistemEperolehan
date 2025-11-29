@@ -12,6 +12,7 @@ use App\Http\Controllers\FileReferenceController;
 use App\Http\Controllers\TypeProcurementController;
 use App\Http\Controllers\ItemUnitController;
 use App\Http\Controllers\DeliveryOrderController;
+use App\Http\Controllers\DeliveryReportController;
 
 Route::get('/', function () {
     return Inertia::render('Welcome', [
@@ -74,6 +75,9 @@ Route::middleware(['auth','verified'])->group(function () {
     // Custom route for Print Summary (GET method)
     Route::get('delivery-orders/{delivery_order}/print', [DeliveryOrderController::class, 'printSummary'])
         ->name('delivery-orders.print');
+
+    // Delivery Reports
+    Route::get('delivery-reports', [DeliveryReportController::class, 'index'])->name('delivery-reports.index');
 });
 
 require __DIR__.'/settings.php';

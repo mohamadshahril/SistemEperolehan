@@ -23,6 +23,7 @@ import {
     CheckSquare,
     Settings,
     Truck,
+    BarChart3,
 } from 'lucide-vue-next';
 import AppLogo from './AppLogo.vue';
 
@@ -65,9 +66,9 @@ const mainNavItems: NavItem[] = [
         icon: Truck,
     },
     {
-        title: 'File References',
-        href: '/file-references',
-        icon: Settings,
+        title: 'Delivery Report',
+        href: '/delivery-reports',
+        icon: BarChart3,
     },
     {
         title: 'Vots',
