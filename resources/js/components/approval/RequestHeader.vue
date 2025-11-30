@@ -1,11 +1,6 @@
 <script setup lang="ts">
 import { FileText, Mail, Clock } from 'lucide-vue-next'
 
-interface User {
-  id: number
-  name: string
-  email: string
-}
 
 interface Props {
   id: number
