@@ -43,7 +43,7 @@ class DeliveryReportController extends Controller
         }
 
         // Apply status filter
-        if ($filters['status'] !== '') {
+        if ($filters['status'] !== null && $filters['status'] !== '') {
             $filters['status'] === 'received'
                 ? $query->where('is_received', true)
                 : $query->where('is_received', false);
