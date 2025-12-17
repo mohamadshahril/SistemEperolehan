@@ -86,14 +86,29 @@ const formatDateMalaysia = (dateString: string) => {
     const date = new Date(dateString)
     return date.toLocaleDateString('ms-MY', { year: 'numeric', month: '2-digit', day: '2-digit' })
 }
+
+function exportToPdf() {
+  const params = new URLSearchParams({
+    from_date: state.from_date || '',
+    to_date: state.to_date || '',
+    vendor_id: String(state.vendor_id) || '',
+    status: state.status || '',
+    sort_by: state.sort_by || '',
+    sort_dir: state.sort_dir || '',
+  })
+  window.open(`/delivery-reports/export/pdf?${params.toString()}`, '_blank')
+}
 </script>
 
 <template>
   <Head title="Delivery Reports" />
   <AppLayout :breadcrumbs="[{ title: 'Delivery Reports', href: '/delivery-reports' }]">
     <div class="p-4">
-      <div class="mb-4">
+      <div class="mb-4 flex items-center justify-between gap-3">
         <h1 class="text-2xl font-semibold">Delivery Reports</h1>
+        <button @click="exportToPdf" class="rounded-md bg-red-600 px-4 py-2 text-white hover:bg-red-700">
+          📄 Export to PDF
+        </button>
       </div>
 
       <!-- Stats Cards -->

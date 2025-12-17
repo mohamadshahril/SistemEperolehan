@@ -81,4 +81,66 @@ class DeliveryReportController extends Controller
             'vendors' => $vendors,
         ]);
     }
+
+    public function exportPdf(Request $request)
+    {
+        $filters = [
+            'from_date' => $request->query('from_date'),
+            'to_date' => $request->query('to_date'),
+            'vendor_id' => $request->query('vendor_id'),
+            'status' => $request->query('status'),
+            'sort_by' => $request->query('sort_by', 'delivery_date'),
+            'sort_dir' => $request->query('sort_dir', 'desc'),
+        ];
+
+        $query = DeliveryOrder::with('purchaseOrder.vendor')
+            ->whereHas('purchaseOrder', function ($q) {
+                $q->whereNull('deleted_at');
+            });
+
+        // Apply filters
+        if ($filters['from_date']) {
+            $query->whereDate('delivery_date', '>=', $filters['from_date']);
+        }
+        if ($filters['to_date']) {
+            $query->whereDate('delivery_date', '<=', $filters['to_date']);
+        }
+        if ($filters['vendor_id']) {
+            $query->whereHas('purchaseOrder', function ($q) use ($filters) {
+                $q->where('vendor_id', $filters['vendor_id']);
+            });
+        }
+        if ($filters['status'] !== null && $filters['status'] !== '') {
+            $filters['status'] === 'received'
+                ? $query->where('is_received', true)
+                : $query->where('is_received', false);
+        }
+
+        // Apply sorting
+        if (in_array($filters['sort_by'], ['delivery_date', 'do_number', 'is_received'])) {
+            $query->orderBy($filters['sort_by'], $filters['sort_dir']);
+        } else {
+            $query->orderBy('delivery_date', 'desc');
+        }
+
+        $deliveryOrders = $query->get();
+
+        // Calculate stats
+        $total = $deliveryOrders->count();
+        $received = $deliveryOrders->where('is_received', true)->count();
+        $pending = $deliveryOrders->where('is_received', false)->count();
+        $receivedPercentage = $total > 0 ? round(($received / $total) * 100, 1) : 0;
+
+        return view('reports.delivery-report-pdf', [
+            'deliveryOrders' => $deliveryOrders,
+            'filters' => $filters,
+            'stats' => [
+                'total' => $total,
+                'received' => $received,
+                'pending' => $pending,
+                'received_percentage' => $receivedPercentage,
+            ],
+            'generatedAt' => \Carbon\Carbon::now()->format('d/m/Y H:i:s'),
+        ]);
+    }
 }

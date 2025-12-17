@@ -78,6 +78,7 @@ Route::middleware(['auth','verified'])->group(function () {
 
     // Delivery Reports
     Route::get('delivery-reports', [DeliveryReportController::class, 'index'])->name('delivery-reports.index');
+    Route::get('delivery-reports/export/pdf', [DeliveryReportController::class, 'exportPdf'])->name('delivery-reports.export-pdf');
 });
 
 require __DIR__.'/settings.php';
