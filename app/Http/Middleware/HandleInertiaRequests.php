@@ -38,12 +38,45 @@ class HandleInertiaRequests extends Middleware
     {
         [$message, $author] = str(Inspiring::quotes()->random())->explode('-');
 
+        $user = $request->user();
+        $roles = [];
+        $permissions = [];
+        $can = [];
+        $isAdmin = false;
+
+        if ($user) {
+            try {
+                $roles = $user->roles()->pluck('name')->toArray();
+                $permissions = $user->permissions()->pluck('name')->toArray();
+                // Include role permissions as well for convenience map
+                $allPerms = collect($permissions)
+                    ->merge($user->roles()->with('permissions')->get()->flatMap->permissions->pluck('name'))
+                    ->unique()
+                    ->values();
+
+                foreach ($allPerms as $p) {
+                    $can[$p] = true;
+                }
+                $isAdmin = in_array('Admin', $roles, true);
+            } catch (\Throwable $e) {
+                // Tables may not exist during fresh setup; ignore.
+            }
+        }
+
         return [
             ...parent::share($request),
             'name' => config('app.name'),
             'quote' => ['message' => trim($message), 'author' => trim($author)],
             'auth' => [
-                'user' => $request->user(),
+                'user' => $user ? [
+                    'id' => $user->id,
+                    'name' => $user->name,
+                    'email' => $user->email,
+                ] : null,
+                'roles' => $roles,
+                'permissions' => $permissions,
+                'isAdmin' => $isAdmin,
+                'can' => $can,
             ],
             'sidebarOpen' => ! $request->hasCookie('sidebar_state') || $request->cookie('sidebar_state') === 'true',
         ];

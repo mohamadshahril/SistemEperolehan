@@ -14,6 +14,8 @@ const props = defineProps<{
     sort_dir?: 'asc' | 'desc' | null
     per_page?: number | null
   }
+  catalog?: Record<string, Array<{ name: string; description?: string | null }>>
+  existingNames?: string[]
 }>()
 
 const state = reactive({
@@ -52,6 +54,10 @@ function destroyPermission(id: number) {
   if (!confirm('Delete this permission?')) return
   router.delete(`/permissions/${id}`, { preserveScroll: true })
 }
+
+function exists(name: string) {
+  return (props.existingNames || []).includes(name)
+}
 </script>
 
 <template>
@@ -61,6 +67,30 @@ function destroyPermission(id: number) {
       <div class="mb-4 flex items-center justify-between gap-3">
         <h1 class="text-2xl font-semibold">Permissions</h1>
         <a href="/permissions/create" class="rounded-md bg-primary px-3 py-2 text-white">New Permission</a>
+      </div>
+
+      <!-- Static system catalog (read-only reference from code) -->
+      <div class="mb-6 rounded-md border p-4">
+        <h2 class="mb-2 text-lg font-semibold">System Permission Catalog</h2>
+        <p class="mb-4 text-sm text-muted-foreground">These permissions are defined in code and should exist in the database. Use this as a reference when assigning roles.</p>
+
+        <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
+          <div v-for="(items, group) in (props.catalog || {})" :key="String(group)" class="rounded-md border p-3">
+            <h3 class="mb-2 font-medium">{{ group }}</h3>
+            <ul class="space-y-1">
+              <li v-for="perm in items" :key="perm.name" class="flex items-start justify-between gap-3">
+                <div>
+                  <div class="font-mono text-sm">{{ perm.name }}</div>
+                  <div class="text-xs text-muted-foreground">{{ perm.description || '-' }}</div>
+                </div>
+                <span class="mt-1 inline-flex items-center rounded px-2 py-0.5 text-xs"
+                      :class="exists(perm.name) ? 'bg-green-100 text-green-700' : 'bg-amber-100 text-amber-700'">
+                  {{ exists(perm.name) ? 'Present' : 'Missing' }}
+                </span>
+              </li>
+            </ul>
+          </div>
+        </div>
       </div>
 
       <div class="mb-4 grid grid-cols-1 gap-3 md:grid-cols-4">

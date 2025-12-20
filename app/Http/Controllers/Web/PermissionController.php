@@ -34,6 +34,10 @@ class PermissionController extends Controller
         $perPage = (int) $request->input('per_page', 10);
         $permissions = $query->paginate($perPage)->withQueryString();
 
+        // Static catalog from config for display in UI
+        $catalog = (array) config('permissions.catalog', []);
+        $existingNames = Permission::pluck('name')->all();
+
         return Inertia::render('permissions/Index', [
             'permissions' => $permissions,
             'filters' => [
@@ -42,6 +46,8 @@ class PermissionController extends Controller
                 'sort_dir' => $sortDir,
                 'per_page' => $perPage,
             ],
+            'catalog' => $catalog,
+            'existingNames' => $existingNames,
         ]);
     }
 
