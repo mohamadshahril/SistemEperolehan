@@ -13,6 +13,11 @@ use App\Http\Controllers\TypeProcurementController;
 use App\Http\Controllers\ItemUnitController;
 use App\Http\Controllers\DeliveryOrderController;
 use App\Http\Controllers\DeliveryReportController;
+use App\Http\Controllers\Web\TenderController;
+use App\Http\Controllers\Web\TenderBidController;
+use App\Http\Controllers\Web\RoleController;
+use App\Http\Controllers\Web\PermissionController;
+use App\Http\Controllers\Web\UserController;
 
 Route::get('/', function () {
     return Inertia::render('Welcome', [
@@ -78,7 +83,19 @@ Route::middleware(['auth','verified'])->group(function () {
 
     // Delivery Reports
     Route::get('delivery-reports', [DeliveryReportController::class, 'index'])->name('delivery-reports.index');
+
+    // Tenders
+    Route::resource('tenders', TenderController::class);
+    Route::post('tenders/{tender}/award', [TenderController::class, 'award'])->name('tenders.award');
+
+    // Tender Bids
+    Route::resource('tender-bids', TenderBidController::class)->except(['create', 'edit']);
     Route::get('delivery-reports/export/pdf', [DeliveryReportController::class, 'exportPdf'])->name('delivery-reports.export-pdf');
+
+    // User / Role / Permission Management
+    Route::resource('roles', RoleController::class);
+    Route::resource('permissions', PermissionController::class)->except(['show']);
+    Route::resource('users', UserController::class)->only(['index','edit','update']);
 });
 
 require __DIR__.'/settings.php';
