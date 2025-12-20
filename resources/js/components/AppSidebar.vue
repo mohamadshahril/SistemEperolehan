@@ -25,6 +25,8 @@ import {
     Truck,
     BarChart3,
     FileText,
+    ShieldCheck,
+    KeyRound,
 } from 'lucide-vue-next';
 import AppLogo from './AppLogo.vue';
 
@@ -90,6 +92,21 @@ const mainNavItems: NavItem[] = [
         title: 'Item Units',
         href: '/item-units',
         icon: Settings,
+    },
+    {
+        title: 'Users',
+        href: '/users',
+        icon: Users,
+    },
+    {
+        title: 'Roles',
+        href: '/roles',
+        icon: ShieldCheck,
+    },
+    {
+        title: 'Permissions',
+        href: '/permissions',
+        icon: KeyRound,
     },
 ];
 </script>
