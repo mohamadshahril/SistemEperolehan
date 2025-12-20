@@ -24,6 +24,7 @@ import {
     Settings,
     Truck,
     BarChart3,
+    FileText,
 } from 'lucide-vue-next';
 import AppLogo from './AppLogo.vue';
 
@@ -59,6 +60,11 @@ const mainNavItems: NavItem[] = [
         title: 'Purchase Orders',
         href: '/purchase-orders',
         icon: ShoppingCart,
+    },
+    {
+        title: 'Tenders',
+        href: '/tenders',
+        icon: FileText,
     },
     {
         title: 'Delivery Order',

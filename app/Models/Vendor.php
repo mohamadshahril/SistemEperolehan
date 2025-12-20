@@ -35,6 +35,14 @@ class Vendor extends Model
     }
 
     /**
+     * Get all tender bids submitted by this vendor
+     */
+    public function tenderBids(): HasMany
+    {
+        return $this->hasMany(TenderBid::class);
+    }
+
+    /**
      * Get formatted full address
      */
     public function getFullAddressAttribute(): string
