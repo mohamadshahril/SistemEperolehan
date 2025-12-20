@@ -26,6 +26,7 @@ const props = defineProps<{
         to_date?: string | null
         vendor_id?: number | null
         status?: string | null
+        search?: string | null
         sort_by?: string | null
         sort_dir?: 'asc' | 'desc' | null
     }
@@ -39,6 +40,7 @@ const state = reactive({
     to_date: props.filters.to_date ?? '',
     vendor_id: props.filters.vendor_id ?? '',
     status: props.filters.status ?? '',
+    search: props.filters.search ?? '',
     sort_by: props.filters.sort_by ?? 'delivery_date',
     sort_dir: (props.filters.sort_dir as 'asc' | 'desc' | null) ?? 'desc',
 })
@@ -80,6 +82,7 @@ function applyFilters(extra: Record<string, unknown> = {}) {
         to_date: state.to_date || undefined,
         vendor_id: state.vendor_id || undefined,
         status: state.status || undefined,
+        search: state.search || undefined,
         sort_by: state.sort_by || undefined,
         sort_dir: state.sort_dir || undefined,
         ...extra,
@@ -91,6 +94,7 @@ function resetFilters() {
     state.to_date = ''
     state.vendor_id = ''
     state.status = ''
+    state.search = ''
     applyFilters({ page: 1 })
 }
 
@@ -122,33 +126,49 @@ function goTo(url: string | null) {
             </div>
 
             <!-- Filters -->
-            <div class="mb-4 grid grid-cols-1 gap-3 rounded-md border bg-white p-4 md:grid-cols-5">
-                <div>
-                    <label class="block text-sm font-medium">From Date</label>
-                    <input v-model="state.from_date" type="date" class="mt-1 block w-full rounded-md border p-2" @change="applyFilters({ page: 1 })" />
+            <div class="mb-4 space-y-3">
+                <!-- Search Bar -->
+                <div class="rounded-md border bg-white p-4">
+                    <label class="block text-sm font-medium mb-2">🔍 Search Delivery Order</label>
+                    <input 
+                        v-model="state.search" 
+                        type="text" 
+                        placeholder="Find by DO number or vendor name..."
+                        class="w-full rounded-md border p-2"
+                        @keyup.enter="applyFilters({ page: 1 })"
+                    />
+                    <p class="mt-2 text-xs text-gray-500">Search by Delivery Order number (e.g., DO-001) or Vendor name</p>
                 </div>
-                <div>
-                    <label class="block text-sm font-medium">To Date</label>
-                    <input v-model="state.to_date" type="date" class="mt-1 block w-full rounded-md border p-2" @change="applyFilters({ page: 1 })" />
-                </div>
-                <div>
-                    <label class="block text-sm font-medium">Vendor</label>
-                    <select v-model="state.vendor_id" class="mt-1 block w-full rounded-md border p-2" @change="applyFilters({ page: 1 })">
-                        <option value="">All Vendors</option>
-                        <option v-for="vendor in props.vendors" :key="vendor.id" :value="String(vendor.id)">{{ vendor.name }}</option>
-                    </select>
-                </div>
-                <div>
-                    <label class="block text-sm font-medium">Status</label>
-                    <select v-model="state.status" class="mt-1 block w-full rounded-md border p-2" @change="applyFilters({ page: 1 })">
-                        <option value="">All</option>
-                        <option value="received">Received</option>
-                        <option value="pending">Pending</option>
-                    </select>
-                </div>
-                <div class="flex items-end gap-2">
-                    <button @click="applyFilters({ page: 1 })" class="rounded-md border px-3 py-2">Apply</button>
-                    <button @click="resetFilters" class="rounded-md border px-3 py-2">Reset</button>
+
+                <!-- Other Filters -->
+                <div class="grid grid-cols-1 gap-3 rounded-md border bg-white p-4 md:grid-cols-5">
+                    <div>
+                        <label class="block text-sm font-medium">From Date</label>
+                        <input v-model="state.from_date" type="date" class="mt-1 block w-full rounded-md border p-2" @change="applyFilters({ page: 1 })" />
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium">To Date</label>
+                        <input v-model="state.to_date" type="date" class="mt-1 block w-full rounded-md border p-2" @change="applyFilters({ page: 1 })" />
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium">Vendor</label>
+                        <select v-model="state.vendor_id" class="mt-1 block w-full rounded-md border p-2" @change="applyFilters({ page: 1 })">
+                            <option value="">All Vendors</option>
+                            <option v-for="vendor in props.vendors" :key="vendor.id" :value="String(vendor.id)">{{ vendor.name }}</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium">Status</label>
+                        <select v-model="state.status" class="mt-1 block w-full rounded-md border p-2" @change="applyFilters({ page: 1 })">
+                            <option value="">All</option>
+                            <option value="received">Received</option>
+                            <option value="pending">Pending</option>
+                        </select>
+                    </div>
+                    <div class="flex items-end gap-2">
+                        <button @click="applyFilters({ page: 1 })" class="rounded-md border px-3 py-2">Apply</button>
+                        <button @click="resetFilters" class="rounded-md border px-3 py-2">Reset</button>
+                    </div>
                 </div>
             </div>
 

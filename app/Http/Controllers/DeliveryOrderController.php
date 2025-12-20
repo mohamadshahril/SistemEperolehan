@@ -21,6 +21,7 @@ class DeliveryOrderController extends Controller
             'to_date' => $request->query('to_date'),
             'vendor_id' => $request->query('vendor_id'),
             'status' => $request->query('status'),
+            'search' => $request->query('search'),
             'sort_by' => $request->query('sort_by', 'delivery_date'),
             'sort_dir' => $request->query('sort_dir', 'desc'),
         ];
@@ -29,6 +30,17 @@ class DeliveryOrderController extends Controller
             ->whereHas('purchaseOrder', function ($q) {
                 $q->whereNull('deleted_at');
             });
+
+        // Apply search filter (DO number or vendor name)
+        if ($filters['search']) {
+            $search = $filters['search'];
+            $query->where(function ($q) use ($search) {
+                $q->where('do_number', 'like', "%{$search}%")
+                  ->orWhereHas('purchaseOrder.vendor', function ($subQ) use ($search) {
+                      $subQ->where('name', 'like', "%{$search}%");
+                  });
+            });
+        }
 
         // Apply date range filter
         if ($filters['from_date']) {
