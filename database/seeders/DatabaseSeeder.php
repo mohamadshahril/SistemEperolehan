@@ -21,21 +21,11 @@ class DatabaseSeeder extends Seeder
             ItemUnitSeeder::class,
         ]);
 
-        // Create or update a default admin/test user
-        $admin = User::updateOrCreate(
-            ['email' => 'admin@example.com'],
-            [
-                'name' => 'Admin User',
-                'password' => 'password', // will be hashed by model cast
-                'ic_no' => '800101016666',
-                'staff_id' => 'A0001',
-                'location_iso_code' => 'MY-01',
-                'email_verified_at' => now(),
-            ]
-        );
-
-        // Additional sample users
-        User::factory(5)->create();
+        // Users, Roles & Permissions
+        $this->call([
+            UserSeeder::class,
+            RbacSeeder::class,
+        ]);
 
         // Seed purchase requests via dedicated seeder (kept small and safe to re-run)
         $this->call([
