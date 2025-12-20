@@ -87,6 +87,7 @@ Route::middleware(['auth','verified'])->group(function () {
 
     // Tender Bids
     Route::resource('tender-bids', TenderBidController::class)->except(['create', 'edit']);
+    Route::get('delivery-reports/export/pdf', [DeliveryReportController::class, 'exportPdf'])->name('delivery-reports.export-pdf');
 });
 
 require __DIR__.'/settings.php';

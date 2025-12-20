@@ -19,10 +19,19 @@ const props = defineProps<{
   purchaseOrders: Array<{ id: number; order_number: string }>
 }>()
 
+// Format delivery_date to YYYY-MM-DD for date input
+const formatDateForInput = (dateString: string) => {
+  const date = new Date(dateString)
+  const year = date.getFullYear()
+  const month = String(date.getMonth() + 1).padStart(2, '0')
+  const day = String(date.getDate()).padStart(2, '0')
+  return `${year}-${month}-${day}`
+}
+
 const form = useForm({
   purchase_order_id: String(props.deliveryOrder.purchase_order.id),
   do_number: props.deliveryOrder.do_number,
-  delivery_date: props.deliveryOrder.delivery_date,
+  delivery_date: formatDateForInput(props.deliveryOrder.delivery_date),
   delivery_file: null as File | null,
   notes: props.deliveryOrder.notes || '',
 })

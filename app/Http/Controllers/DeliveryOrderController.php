@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\DeliveryOrder;
 use App\Models\PurchaseOrder;
+use App\Models\Vendor;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use App\Http\Requests\DeliveryOrderStoreRequest;
@@ -13,15 +14,64 @@ class DeliveryOrderController extends Controller
 {
     // You would typically use middleware here for authorization
 
-    public function index()
+    public function index(Request $request)
     {
-        // Example with pagination and relationships
-        $deliveryOrders = DeliveryOrder::with('purchaseOrder.vendor')
-            ->orderBy('delivery_date', 'desc')
-            ->paginate(10);
+        $filters = [
+            'from_date' => $request->query('from_date'),
+            'to_date' => $request->query('to_date'),
+            'vendor_id' => $request->query('vendor_id'),
+            'status' => $request->query('status'),
+            'sort_by' => $request->query('sort_by', 'delivery_date'),
+            'sort_dir' => $request->query('sort_dir', 'desc'),
+        ];
+
+        $query = DeliveryOrder::with('purchaseOrder.vendor')
+            ->whereHas('purchaseOrder', function ($q) {
+                $q->whereNull('deleted_at');
+            });
+
+        // Apply date range filter
+        if ($filters['from_date']) {
+            $query->whereDate('delivery_date', '>=', $filters['from_date']);
+        }
+
+        if ($filters['to_date']) {
+            $query->whereDate('delivery_date', '<=', $filters['to_date']);
+        }
+
+        // Apply vendor filter
+        if ($filters['vendor_id']) {
+            $query->whereHas('purchaseOrder', function ($q) use ($filters) {
+                $q->where('vendor_id', $filters['vendor_id']);
+            });
+        }
+
+        // Apply status filter
+        if ($filters['status'] !== null && $filters['status'] !== '') {
+            $filters['status'] === 'received'
+                ? $query->where('is_received', true)
+                : $query->where('is_received', false);
+        }
+
+        // Sorting
+        if (in_array($filters['sort_by'], ['delivery_date', 'do_number', 'is_received'])) {
+            $query->orderBy($filters['sort_by'], $filters['sort_dir']);
+        } else {
+            $query->orderBy('delivery_date', 'desc');
+        }
+
+        $deliveryOrders = $query->paginate(10);
+
+        // Get vendors for dropdown
+        $vendors = Vendor::select('id', 'name')
+            ->where('deleted_at', null)
+            ->orderBy('name')
+            ->get();
 
         return Inertia::render('delivery-orders/Index', [
             'deliveryOrders' => $deliveryOrders,
+            'filters' => $filters,
+            'vendors' => $vendors,
         ]);
     }
 
