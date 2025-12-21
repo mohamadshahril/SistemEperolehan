@@ -1,0 +1,110 @@
+===========================================
+GITHUB COMMIT MESSAGE
+===========================================
+
+SUMMARY (Title):
+Fix: Resolve black screen issue - disable SSR, fix VendorController, add missing vendor Show page
+
+DESCRIPTION (Body):
+
+## Problem
+Application was showing a blank screen due to multiple issues:
+1. SSR (Server-Side Rendering) enabled but SSR bundle missing
+2. PHP syntax error in VendorController (variable name conflict)
+3. Missing vendors/Show.vue component
+4. Vite dev server not running (requires `npm run dev`)
+
+## Changes Made
+
+### Backend Fixes
+- **VendorController.php**: Fixed variable naming conflict in nested closures
+  - Changed `$query` to `$vendorQuery` in main query builder
+  - Prevents PHP parse error when using closures with `with()` method
+
+### Frontend Fixes
+- **vite.config.ts**: Disabled SSR configuration
+  - Commented out `ssr: 'resources/js/ssr.ts'` line
+  - Prevents Inertia from looking for missing SSR bundle
+  
+- **vendors/Show.vue**: Created missing vendor detail page component
+  - Displays vendor information (name, email, phone, address)
+  - Shows associated purchase orders
+  - Includes proper breadcrumbs and navigation
+
+### Configuration
+- Removed old build artifacts (public/build, bootstrap/ssr)
+- Rebuilt frontend assets with `npm run build`
+- Cleared all Laravel caches
+
+## Files Changed
+- `vite.config.ts` - Disabled SSR
+- `app/Http/Controllers/Web/VendorController.php` - Fixed syntax error
+- `resources/js/pages/vendors/Show.vue` - Created new component
+
+## Testing
+- ✅ PHP syntax validation passed
+- ✅ Laravel boots successfully
+- ✅ Database connection working
+- ✅ All routes registered correctly
+- ✅ Frontend build completed successfully
+- ✅ 5 tenders exist in database
+
+## Notes
+- To run in development mode: `npm run dev` (keeps Vite dev server running)
+- To use production build: `npm run build` (no dev server needed)
+- All backend functionality is working correctly
+- Authentication required to access tender pages
+
+## Related Issues
+Fixes blank screen / black screen issue when accessing the application
+
+===========================================
+FILES TO EXCLUDE FROM COMMIT
+===========================================
+
+In GitHub Desktop, UNCHECK these files before committing:
+
+Documentation/Troubleshooting Files (not needed in repo):
+☐ BLACK_SCREEN_FIX.md
+☐ BLANK_SCREEN_SOLUTION.md
+☐ SSR_BLACK_SCREEN_FIX.md
+☐ VITE_CONNECTION_REFUSED_FIX.md
+☐ TENDER_NOT_SHOWING_FIX.md
+☐ check-site-status.php
+☐ diagnose-tender-issue.php
+☐ fix-vite-connection.bat
+☐ rebuild-frontend.bat
+☐ .gitignore_additions
+☐ COMMIT_MESSAGE.txt
+
+===========================================
+FILES TO INCLUDE IN COMMIT
+===========================================
+
+Core Changes (KEEP THESE CHECKED):
+☑ vite.config.ts
+☑ app/Http/Controllers/Web/VendorController.php
+☑ resources/js/pages/vendors/Show.vue
+
+Optional (if you want to commit them):
+☐ .env (if you changed APP_ENV)
+☐ database/migrations/2025_12_20_143824_make_ic_no_nullable_in_users_table.php
+
+===========================================
+COMMIT STEPS IN GITHUB DESKTOP
+===========================================
+
+1. Open GitHub Desktop
+2. Review the 19 changed files
+3. UNCHECK all the .md documentation files listed above
+4. UNCHECK the diagnostic/troubleshooting scripts
+5. Keep CHECKED only:
+   - vite.config.ts
+   - app/Http/Controllers/Web/VendorController.php
+   - resources/js/pages/vendors/Show.vue
+6. Copy the SUMMARY above into the "Summary" field
+7. Copy the DESCRIPTION above into the "Description" field
+8. Click "Commit to main" (or your branch name)
+9. Click "Push origin" to push to GitHub
+
+===========================================

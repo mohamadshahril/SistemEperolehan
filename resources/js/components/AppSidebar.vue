@@ -25,6 +25,7 @@ import {
     Truck,
     BarChart3,
     FileText,
+    Gavel,
 } from 'lucide-vue-next';
 import AppLogo from './AppLogo.vue';
 
@@ -65,6 +66,11 @@ const mainNavItems: NavItem[] = [
         title: 'Tenders',
         href: '/tenders',
         icon: FileText,
+    },
+    {
+        title: 'Tender Bids',
+        href: '/tender-bids',
+        icon: Gavel,
     },
     {
         title: 'Delivery Order',

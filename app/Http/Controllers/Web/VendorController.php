@@ -23,17 +23,17 @@ class VendorController extends Controller
             'per_page' => ['nullable', 'integer', 'min:1', 'max:100'],
         ]);
 
-        $query = Vendor::query()
+        $vendorQuery = Vendor::query()
             ->withCount('purchaseOrders')
-            ->with(['purchaseOrders' => function ($query) {
-                $query->select('id', 'vendor_id', 'order_number', 'status', 'created_at')
+            ->with(['purchaseOrders' => function ($q) {
+                $q->select('id', 'vendor_id', 'order_number', 'status', 'created_at')
                     ->latest()
                     ->limit(5);
             }]);
 
         // Search by name, email, phone, or address
         if ($search = $request->string('search')->toString()) {
-            $query->where(function ($q) use ($search) {
+            $vendorQuery->where(function ($q) use ($search) {
                 $q->where('name', 'like', "%{$search}%")
                     ->orWhere('email', 'like', "%{$search}%")
                     ->orWhere('phone', 'like', "%{$search}%")
@@ -48,11 +48,11 @@ class VendorController extends Controller
         // Sorting
         $sortBy = $request->input('sort_by', 'created_at');
         $sortDir = $request->input('sort_dir', 'desc');
-        $query->orderBy($sortBy, $sortDir);
+        $vendorQuery->orderBy($sortBy, $sortDir);
 
         // Pagination
         $perPage = (int) $request->input('per_page', 10);
-        $vendors = $query->paginate($perPage)->withQueryString();
+        $vendors = $vendorQuery->paginate($perPage)->withQueryString();
 
         return Inertia::render('vendors/Index', [
             'vendors' => $vendors,
@@ -103,8 +103,10 @@ class VendorController extends Controller
      */
     public function show(Vendor $vendor)
     {
+        $vendor->load('purchaseOrders');
+        
         return Inertia::render('vendors/Show', [
-            'vendor' => $vendor->load('purchaseOrders'),
+            'vendor' => $vendor,
         ]);
     }
 

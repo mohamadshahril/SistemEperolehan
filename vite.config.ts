@@ -8,7 +8,7 @@ export default defineConfig({
     plugins: [
         laravel({
             input: ['resources/js/app.ts'],
-            ssr: 'resources/js/ssr.ts',
+            // ssr: 'resources/js/ssr.ts', // Disabled SSR - uncomment and run 'php artisan inertia:start-ssr' to enable
             refresh: true,
         }),
         tailwindcss(),
