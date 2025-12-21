@@ -13,7 +13,7 @@ import {
 } from '@/components/ui/sidebar';
 import { dashboard } from '@/routes';
 import { type NavItem } from '@/types';
-import { Link } from '@inertiajs/vue3';
+import { Link, usePage } from '@inertiajs/vue3';
 import {
     BookPlus,
     LayoutGrid,
@@ -26,8 +26,11 @@ import {
     BarChart3,
     FileText,
     Gavel,
+    ShieldCheck,
+    KeyRound,
 } from 'lucide-vue-next';
 import AppLogo from './AppLogo.vue';
+import { computed } from 'vue';
 
 const footerNavItems: NavItem[] = [];
 
@@ -97,7 +100,74 @@ const mainNavItems: NavItem[] = [
         href: '/item-units',
         icon: Settings,
     },
+    {
+        title: 'Users',
+        href: '/users',
+        icon: Users,
+    },
+    {
+        title: 'Roles',
+        href: '/roles',
+        icon: ShieldCheck,
+    },
+    {
+        title: 'Permissions',
+        href: '/permissions',
+        icon: KeyRound,
+    },
 ];
+
+// Permission-gated sidebar
+const page = usePage();
+const filteredItems = computed(() => {
+    const auth: any = page.props?.auth || {};
+    const can: Record<string, boolean> = auth?.can || {};
+    const isAdmin: boolean = !!auth?.isAdmin;
+
+    // Helper to check permission or admin
+    const allow = (perm?: string) => isAdmin || (!!perm && !!can[perm]);
+
+    return mainNavItems.filter((item) => {
+        switch (item.title) {
+            case 'Dashboard':
+                return true;
+            case 'Purchase Requests':
+                // Visible to Admin or users who can create PR (e.g., Staff). Managers typically shouldn't see this.
+                return allow('create purchase requests');
+            case 'Approvals':
+                return allow('view approvals');
+            case 'Locations':
+                return allow('view locations');
+            case 'Vendors':
+                return allow('view vendors');
+            case 'Purchase Orders':
+                return allow('view purchase orders');
+            case 'Tenders':
+                return allow('view tenders');
+            case 'Tender Bids':
+                return allow('view tender bids');
+            case 'Delivery Order':
+                return allow('view delivery orders');
+            case 'Delivery Report':
+                return allow('view delivery reports');
+            case 'Vots':
+                return allow('view vots');
+            case 'Type Procurements':
+                return allow('view type procurements');
+            case 'Item Units':
+                return allow('view item units');
+            case 'Users':
+                // Only Admin or manage users should see settings menus
+                return allow('manage users');
+            case 'Roles':
+                return allow('manage roles');
+            case 'Permissions':
+                return allow('manage permissions');
+            default:
+                return false;
+        }
+    });
+});
 </script>
 
 <template>
@@ -115,7 +185,7 @@ const mainNavItems: NavItem[] = [
         </SidebarHeader>
 
         <SidebarContent>
-            <NavMain :items="mainNavItems" />
+            <NavMain :items="filteredItems" />
         </SidebarContent>
 
         <SidebarFooter>

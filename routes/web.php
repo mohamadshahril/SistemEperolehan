@@ -15,6 +15,9 @@ use App\Http\Controllers\DeliveryOrderController;
 use App\Http\Controllers\DeliveryReportController;
 use App\Http\Controllers\Web\TenderController;
 use App\Http\Controllers\Web\TenderBidController;
+use App\Http\Controllers\Web\RoleController;
+use App\Http\Controllers\Web\PermissionController;
+use App\Http\Controllers\Web\UserController;
 
 Route::get('/', function () {
     return Inertia::render('Welcome', [
@@ -61,10 +64,18 @@ Route::middleware(['auth','verified'])->group(function () {
     Route::resource('item-units', ItemUnitController::class);
 
     // Approvals Module (Managers)
-    Route::get('approvals', [PurchaseRequestController::class, 'approvalsIndex'])->name('approvals.index');
-    Route::get('approvals/{purchaseRequest}', [PurchaseRequestController::class, 'approvalsShow'])->name('approvals.show');
-    Route::post('approvals/{purchaseRequest}/approve', [PurchaseRequestController::class, 'approve'])->name('approvals.approve');
-    Route::post('approvals/{purchaseRequest}/reject', [PurchaseRequestController::class, 'reject'])->name('approvals.reject');
+    Route::get('approvals', [PurchaseRequestController::class, 'approvalsIndex'])
+        ->middleware('can:view approvals')
+        ->name('approvals.index');
+    Route::get('approvals/{purchaseRequest}', [PurchaseRequestController::class, 'approvalsShow'])
+        ->middleware('can:view approvals')
+        ->name('approvals.show');
+    Route::post('approvals/{purchaseRequest}/approve', [PurchaseRequestController::class, 'approve'])
+        ->middleware('can:approve purchase requests')
+        ->name('approvals.approve');
+    Route::post('approvals/{purchaseRequest}/reject', [PurchaseRequestController::class, 'reject'])
+        ->middleware('can:reject purchase requests')
+        ->name('approvals.reject');
     // ... other resource routes (e.g., 'locations')
 
     // Delivery Orders Resource Route
@@ -72,21 +83,35 @@ Route::middleware(['auth','verified'])->group(function () {
 
     // Custom route for Confirm Delivery (PATCH method)
     Route::patch('delivery-orders/{delivery_order}/confirm', [DeliveryOrderController::class, 'confirm'])
+        ->middleware('can:confirm delivery orders')
         ->name('delivery-orders.confirm');
 
     // Custom route for Print Summary (GET method)
     Route::get('delivery-orders/{delivery_order}/print', [DeliveryOrderController::class, 'printSummary'])
+        ->middleware('can:print delivery orders')
         ->name('delivery-orders.print');
 
     // Delivery Reports
-    Route::get('delivery-reports', [DeliveryReportController::class, 'index'])->name('delivery-reports.index');
+    Route::get('delivery-reports', [DeliveryReportController::class, 'index'])
+        ->middleware('can:view delivery reports')
+        ->name('delivery-reports.index');
 
     // Tenders
     Route::resource('tenders', TenderController::class);
-    Route::post('tenders/{tender}/award', [TenderController::class, 'award'])->name('tenders.award');
+    Route::post('tenders/{tender}/award', [TenderController::class, 'award'])
+        ->middleware('can:award tenders')
+        ->name('tenders.award');
 
     // Tender Bids
     Route::resource('tender-bids', TenderBidController::class)->except(['create', 'edit']);
+    Route::get('delivery-reports/export/pdf', [DeliveryReportController::class, 'exportPdf'])
+        ->middleware('can:export delivery reports')
+        ->name('delivery-reports.export-pdf');
+
+    // User / Role / Permission Management (Settings) - restrict to managers of settings (typically Admin only)
+    Route::resource('roles', RoleController::class)->middleware('can:manage roles');
+    Route::resource('permissions', PermissionController::class)->except(['show'])->middleware('can:manage permissions');
+    Route::resource('users', UserController::class)->only(['index','edit','update'])->middleware('can:manage users');
 });
 
 require __DIR__.'/settings.php';
