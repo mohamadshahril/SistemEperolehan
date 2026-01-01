@@ -28,6 +28,7 @@ import {
     Gavel,
     ShieldCheck,
     KeyRound,
+    Gavel,
 } from 'lucide-vue-next';
 import AppLogo from './AppLogo.vue';
 import { computed } from 'vue';
