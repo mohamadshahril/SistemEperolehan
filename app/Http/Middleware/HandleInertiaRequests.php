@@ -57,7 +57,8 @@ class HandleInertiaRequests extends Middleware
                 foreach ($allPerms as $p) {
                     $can[$p] = true;
                 }
-                $isAdmin = in_array('Admin', $roles, true);
+                // Use model helper (case-insensitive) to determine Admin role
+                $isAdmin = $user->isAdmin();
             } catch (\Throwable $e) {
                 // Tables may not exist during fresh setup; ignore.
             }

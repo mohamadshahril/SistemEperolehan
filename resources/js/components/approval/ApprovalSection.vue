@@ -2,6 +2,8 @@
 import { MessageSquare, CheckCircle, XCircle } from 'lucide-vue-next'
 import RemarksField from './RemarksField.vue'
 import ActionButtons from './ActionButtons.vue'
+import { computed } from 'vue'
+import { usePage } from '@inertiajs/vue3'
 
 interface Props {
   requestId: number
@@ -21,6 +23,16 @@ const props = withDefaults(defineProps<Props>(), {
 })
 
 const emit = defineEmits<Emits>()
+
+// Permissions from Inertia shared props
+const page = usePage()
+const canMap = computed<Record<string, boolean>>(() => {
+  const auth: any = (page as any).props?.auth || {}
+  return (auth?.can as Record<string, boolean>) || {}
+})
+
+const canApprove = computed(() => !!canMap.value['approve purchase requests'])
+const canReject = computed(() => !!canMap.value['reject purchase requests'])
 </script>
 
 <template>
@@ -69,6 +81,8 @@ const emit = defineEmits<Emits>()
         :request-id="props.requestId"
         :status="props.status"
         :loading="props.loading"
+        :can-approve="canApprove"
+        :can-reject="canReject"
         @approve="emit('approve')"
         @reject="emit('reject')"
       />

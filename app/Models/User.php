@@ -128,4 +128,12 @@ class User extends Authenticatable
             ->flatMap->permissions
             ->contains(fn ($p) => strcasecmp($p->name, $permissionName) === 0);
     }
+
+    /**
+     * Check if the user is an admin.
+     */
+    public function isAdmin(): bool
+    {
+        return $this->hasRole('Admin');
+    }
 }
