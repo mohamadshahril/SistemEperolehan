@@ -34,14 +34,14 @@ interface Emits {
 defineEmits<Emits>()
 
 const columns = [
-  { key: 'id', label: 'ID', sortable: true, width: '100px' },
+  { key: 'view', label: 'View', sortable: false, width: '60px' },
+  { key: 'id', label: 'Ref ID', sortable: true, width: '100px' },
   { key: 'user', label: "Applicant's Name", sortable: false },
   { key: 'title', label: 'Title', sortable: true },
   { key: 'purchase_ref_no', label: 'Purchase Ref No', sortable: false },
   { key: 'budget', label: 'Budget', sortable: true },
   { key: 'submitted_at', label: 'Submitted', sortable: true },
   { key: 'status', label: 'Status', sortable: true, width: '120px' },
-  { key: 'view', label: 'View', sortable: false, width: '60px' },
 ]
 </script>
 

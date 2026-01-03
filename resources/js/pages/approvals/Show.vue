@@ -101,10 +101,10 @@ const handleRemarksUpdate = (newRemarks: string) => {
       />
 
       <!-- Items Table Section -->
-      <ItemsTable :items="props.request.items" title="Items" :show-total="true" />
+      <ItemsTable :items="props.request.items" title="Requested Items" :show-total="true" />
 
       <!-- Notes Section -->
-      <NotesSection :notes="props.request.note" title="Notes" />
+      <NotesSection :notes="props.request.note" title="Request Notes & Details" />
 
       <!-- Approval Section -->
       <ApprovalSection
