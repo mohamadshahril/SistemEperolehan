@@ -1,0 +1,53 @@
+Add Tender Bids menu item to sidebar and create comprehensive user stories
+
+## Summary
+
+Added missing "Tender Bids" menu item to application sidebar and created detailed user stories documentation for Tender and Tender Bids modules with task breakdowns for project tracking.
+
+## Description
+
+### Sidebar Enhancement
+- Added "Tender Bids" menu item to AppSidebar.vue component
+- Imported Gavel icon from lucide-vue-next for visual representation
+- Implemented permission-based visibility using 'view tender bids' permission
+- Menu item positioned between "Tenders" and "Delivery Order" for logical workflow
+
+### User Stories Documentation
+Created comprehensive user stories for 9 completed features:
+
+**Tender Management:**
+1. Create Tender - Procurement officers can create new tenders with documents
+2. View Tender List - Browse all tenders with search, filter, and pagination
+3. View Tender Details - Access complete tender information and submitted bids
+4. Edit Tender - Modify tender details with audit trail
+5. Delete Tender - Remove tenders with business rule validation
+6. Change Tender Status - Manage tender lifecycle (Open/Closed/Awarded/Cancelled)
+
+**Tender Bids Management:**
+7. View Tender Bids List - Browse all bid submissions across tenders
+8. View Tender Bid Details - Review complete bid information for evaluation
+9. Award Tender Bid - Select winning bid and notify all vendors
+
+Each user story includes:
+- Role and capability definition
+- Business value explanation
+- Positive scenario cases (7-12 per story)
+- Negative scenario cases (5-7 per story)
+- Detailed task breakdowns for implementation tracking
+- Status and assignment information
+
+### Files Modified
+- resources/js/components/AppSidebar.vue
+
+### Files Created
+- TENDER_BIDS_ADDED.md - Implementation guide for sidebar changes
+- TENDER_AND_TENDER_BIDS_USER_STORIES.md - Complete reference with task breakdowns
+- TENDER_USER_STORIES_FOR_FORM.md - Form-ready format for project management tool
+
+### Technical Details
+- Route: /tender-bids
+- Permission: view tender bids
+- Icon: Gavel (lucide-vue-next)
+- Integration: Existing TenderBidController and Index.vue page
+
+This enhancement completes the Tender and Tender Bids module navigation and provides comprehensive documentation for project tracking and team collaboration.
