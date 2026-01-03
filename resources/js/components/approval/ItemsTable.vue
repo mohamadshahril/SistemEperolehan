@@ -4,7 +4,9 @@ import { Package } from 'lucide-vue-next'
 interface Item {
   item_no: number
   details: string
+  item_code?: string | null
   purpose?: string | null
+  unit?: string | null
   quantity: number
   price: number | string
 }
@@ -51,7 +53,9 @@ const formatCurrency = (amount: number | string): string => {
           <tr>
             <th class="px-4 py-3 text-left text-sm font-semibold">Item No</th>
             <th class="px-4 py-3 text-left text-sm font-semibold">Details</th>
+            <th class="px-4 py-3 text-left text-sm font-semibold">Item Code</th>
             <th class="px-4 py-3 text-left text-sm font-semibold">Purpose</th>
+            <th class="px-4 py-3 text-right text-sm font-semibold">Unit</th>
             <th class="px-4 py-3 text-right text-sm font-semibold">Qty</th>
             <th class="px-4 py-3 text-right text-sm font-semibold">Price (RM)</th>
             <th class="px-4 py-3 text-right text-sm font-semibold">Subtotal (RM)</th>
@@ -61,9 +65,11 @@ const formatCurrency = (amount: number | string): string => {
           <tr v-for="(item, idx) in items" :key="idx" class="hover:bg-gray-50">
             <td class="px-4 py-3 text-sm font-mono">{{ item.item_no }}</td>
             <td class="px-4 py-3 text-sm">{{ item.details }}</td>
+            <td class="px-4 py-3 text-sm">{{ item.item_code }}</td>
             <td class="px-4 py-3 text-sm text-muted-foreground">
               {{ item.purpose || '-' }}
             </td>
+            <td class="px-4 py-3 text-right text-sm font-semibold">{{ item.unit }}</td>
             <td class="px-4 py-3 text-right text-sm font-semibold">{{ item.quantity }}</td>
             <td class="px-4 py-3 text-right text-sm">{{ formatCurrency(item.price) }}</td>
             <td class="px-4 py-3 text-right text-sm font-semibold">
@@ -73,7 +79,7 @@ const formatCurrency = (amount: number | string): string => {
         </tbody>
         <tfoot v-if="showTotal" class="bg-blue-50 font-semibold">
           <tr>
-            <td colspan="5" class="px-4 py-3 text-right text-sm">Total Amount:</td>
+            <td colspan="7" class="px-4 py-3 text-right text-sm">Total Amount:</td>
             <td class="px-4 py-3 text-right text-sm text-blue-900">
               RM {{ formatCurrency(calculateTotal(items)) }}
             </td>
