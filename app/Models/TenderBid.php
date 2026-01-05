@@ -18,6 +18,7 @@ class TenderBid extends Model
         'proposal',
         'technical_specifications',
         'delivery_timeline_days',
+        'attachment_path',
         'status',
         'notes',
         'submitted_at',

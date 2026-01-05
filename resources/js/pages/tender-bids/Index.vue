@@ -28,6 +28,14 @@ const props = defineProps<{
   filters: {
     search?: string | null
     status?: string | null
+    year?: number | null
+    opening_date_from?: string | null
+    opening_date_to?: string | null
+    closing_date_from?: string | null
+    closing_date_to?: string | null
+    budget_min?: number | null
+    budget_max?: number | null
+    quick_filter?: string | null
     sort_by?: string | null
     sort_dir?: 'asc' | 'desc' | null
     per_page?: number | null
@@ -37,10 +45,23 @@ const props = defineProps<{
 const state = reactive({
   search: props.filters.search ?? '',
   status: props.filters.status ?? 'Published',
+  year: props.filters.year ?? null,
+  opening_date_from: props.filters.opening_date_from ?? '',
+  opening_date_to: props.filters.opening_date_to ?? '',
+  closing_date_from: props.filters.closing_date_from ?? '',
+  closing_date_to: props.filters.closing_date_to ?? '',
+  budget_min: props.filters.budget_min ?? null,
+  budget_max: props.filters.budget_max ?? null,
+  quick_filter: props.filters.quick_filter ?? '',
   sort_by: props.filters.sort_by ?? 'closing_date',
   sort_dir: (props.filters.sort_dir as 'asc' | 'desc' | null) ?? 'asc',
   per_page: props.filters.per_page ?? 10,
+  showAdvancedFilters: false,
 })
+
+// Generate year options (from 2000 to current year + 10)
+const currentYear = new Date().getFullYear()
+const yearOptions = Array.from({ length: currentYear - 2000 + 11 }, (_, i) => currentYear + 10 - i)
 
 const showBidModal = ref(false)
 const selectedTender = ref<typeof props.tenders.data[0] | null>(null)
@@ -52,6 +73,7 @@ const bidForm = useForm({
   proposal: '',
   technical_specifications: '',
   delivery_timeline_days: null as number | null,
+  attachment: null as File | null,
 })
 
 function formatCurrency(amount: number | null): string {
@@ -113,6 +135,14 @@ function applyFilters(extra: Record<string, unknown> = {}) {
   router.get('/tender-bids', {
     search: state.search || undefined,
     status: state.status || undefined,
+    year: state.year || undefined,
+    opening_date_from: state.opening_date_from || undefined,
+    opening_date_to: state.opening_date_to || undefined,
+    closing_date_from: state.closing_date_from || undefined,
+    closing_date_to: state.closing_date_to || undefined,
+    budget_min: state.budget_min || undefined,
+    budget_max: state.budget_max || undefined,
+    quick_filter: state.quick_filter || undefined,
     sort_by: state.sort_by || undefined,
     sort_dir: state.sort_dir || undefined,
     per_page: state.per_page || undefined,
@@ -123,22 +153,49 @@ function applyFilters(extra: Record<string, unknown> = {}) {
 function resetFilters() {
   state.search = ''
   state.status = 'Published'
+  state.year = null
+  state.opening_date_from = ''
+  state.opening_date_to = ''
+  state.closing_date_from = ''
+  state.closing_date_to = ''
+  state.budget_min = null
+  state.budget_max = null
+  state.quick_filter = ''
   applyFilters({ page: 1 })
 }
 
-function sortBy(column: string) {
-  if (state.sort_by === column) {
-    state.sort_dir = state.sort_dir === 'asc' ? 'desc' : 'asc'
-  } else {
-    state.sort_by = column
-    state.sort_dir = 'asc'
-  }
-  applyFilters()
+function applyQuickFilter(filter: string) {
+  state.quick_filter = filter
+  state.opening_date_from = ''
+  state.opening_date_to = ''
+  state.closing_date_from = ''
+  state.closing_date_to = ''
+  applyFilters({ page: 1 })
+}
+
+function hasActiveFilters(): boolean {
+  return !!(
+    state.search ||
+    (state.status && state.status !== 'Published') ||
+    state.year ||
+    state.opening_date_from ||
+    state.opening_date_to ||
+    state.closing_date_from ||
+    state.closing_date_to ||
+    state.budget_min ||
+    state.budget_max ||
+    state.quick_filter
+  )
 }
 
 function goTo(url: string | null) {
   if (!url) return
   router.get(url, {}, { preserveState: true, preserveScroll: true })
+}
+
+function handleFileChange(e: Event) {
+  const target = e.target as HTMLInputElement
+  bidForm.attachment = target.files?.[0] || null
 }
 </script>
 
@@ -151,41 +208,166 @@ function goTo(url: string | null) {
         <p class="text-sm text-muted-foreground">Browse and submit bids for available tenders</p>
       </div>
 
-      <div class="mb-4 grid grid-cols-1 gap-3 md:grid-cols-3">
-        <div class="md:col-span-2">
-          <label class="block text-sm font-medium">Search</label>
-          <input
-            v-model="state.search"
-            type="text"
-            placeholder="Tender number, title, or description"
-            @keyup.enter="applyFilters({ page: 1 })"
-            class="mt-1 block w-full rounded-md border p-2"
-          />
+      <!-- Quick Filters -->
+      <div class="mb-4 flex flex-wrap gap-2">
+        <button
+          @click="applyQuickFilter('open_now')"
+          class="rounded-full px-4 py-1.5 text-sm border transition-colors"
+          :class="state.quick_filter === 'open_now' ? 'bg-primary text-white border-primary' : 'bg-white hover:bg-gray-50'"
+        >
+          🟢 Open Now
+        </button>
+        <button
+          @click="applyQuickFilter('closing_soon')"
+          class="rounded-full px-4 py-1.5 text-sm border transition-colors"
+          :class="state.quick_filter === 'closing_soon' ? 'bg-primary text-white border-primary' : 'bg-white hover:bg-gray-50'"
+        >
+          ⏰ Closing Soon (7 days)
+        </button>
+        <button
+          @click="applyQuickFilter('recently_added')"
+          class="rounded-full px-4 py-1.5 text-sm border transition-colors"
+          :class="state.quick_filter === 'recently_added' ? 'bg-primary text-white border-primary' : 'bg-white hover:bg-gray-50'"
+        >
+          🆕 Recently Added
+        </button>
+        <button
+          v-if="state.quick_filter"
+          @click="state.quick_filter = ''; applyFilters({ page: 1 })"
+          class="rounded-full px-4 py-1.5 text-sm border bg-gray-100 hover:bg-gray-200"
+        >
+          ✕ Clear Quick Filter
+        </button>
+      </div>
+
+      <!-- Main Filters -->
+      <div class="mb-4 rounded-md border bg-white p-4">
+        <div class="grid grid-cols-1 gap-3 md:grid-cols-4 mb-3">
+          <div class="md:col-span-2">
+            <label class="block text-sm font-medium mb-1">Search</label>
+            <input
+              v-model="state.search"
+              type="text"
+              placeholder="Tender number, title, or description"
+              @keyup.enter="applyFilters({ page: 1 })"
+              class="block w-full rounded-md border p-2"
+            />
+          </div>
+          <div>
+            <label class="block text-sm font-medium mb-1">Year</label>
+            <select v-model.number="state.year" @change="applyFilters({ page: 1 })" class="block w-full rounded-md border p-2">
+              <option :value="null">All Years</option>
+              <option v-for="year in yearOptions" :key="year" :value="year">{{ year }}</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-sm font-medium mb-1">Status</label>
+            <select v-model="state.status" @change="applyFilters({ page: 1 })" class="block w-full rounded-md border p-2">
+              <option value="">All Statuses</option>
+              <option value="Published">Published</option>
+              <option value="Closed">Closed</option>
+              <option value="Awarded">Awarded</option>
+            </select>
+          </div>
         </div>
-        <div>
-          <label class="block text-sm font-medium">Status</label>
-          <select v-model="state.status" @change="applyFilters({ page: 1 })" class="mt-1 block w-full rounded-md border p-2">
-            <option value="">All Statuses</option>
-            <option value="Published">Published</option>
-            <option value="Closed">Closed</option>
-            <option value="Awarded">Awarded</option>
-          </select>
+
+        <!-- Advanced Filters Toggle -->
+        <button
+          @click="state.showAdvancedFilters = !state.showAdvancedFilters"
+          class="text-sm text-primary hover:underline mb-3"
+        >
+          {{ state.showAdvancedFilters ? '▼ Hide' : '▶ Show' }} Advanced Filters
+        </button>
+
+        <!-- Advanced Filters -->
+        <div v-if="state.showAdvancedFilters" class="space-y-3 pt-3 border-t">
+          <div class="grid grid-cols-1 gap-3 md:grid-cols-2">
+            <div>
+              <label class="block text-sm font-medium mb-1">Opening Date From</label>
+              <input
+                v-model="state.opening_date_from"
+                type="date"
+                class="block w-full rounded-md border p-2"
+              />
+            </div>
+            <div>
+              <label class="block text-sm font-medium mb-1">Opening Date To</label>
+              <input
+                v-model="state.opening_date_to"
+                type="date"
+                class="block w-full rounded-md border p-2"
+              />
+            </div>
+          </div>
+
+          <div class="grid grid-cols-1 gap-3 md:grid-cols-2">
+            <div>
+              <label class="block text-sm font-medium mb-1">Closing Date From</label>
+              <input
+                v-model="state.closing_date_from"
+                type="date"
+                class="block w-full rounded-md border p-2"
+              />
+            </div>
+            <div>
+              <label class="block text-sm font-medium mb-1">Closing Date To</label>
+              <input
+                v-model="state.closing_date_to"
+                type="date"
+                class="block w-full rounded-md border p-2"
+              />
+            </div>
+          </div>
+
+          <div class="grid grid-cols-1 gap-3 md:grid-cols-2">
+            <div>
+              <label class="block text-sm font-medium mb-1">Budget Min (MYR)</label>
+              <input
+                v-model.number="state.budget_min"
+                type="number"
+                step="0.01"
+                min="0"
+                placeholder="0.00"
+                class="block w-full rounded-md border p-2"
+              />
+            </div>
+            <div>
+              <label class="block text-sm font-medium mb-1">Budget Max (MYR)</label>
+              <input
+                v-model.number="state.budget_max"
+                type="number"
+                step="0.01"
+                min="0"
+                placeholder="0.00"
+                class="block w-full rounded-md border p-2"
+              />
+            </div>
+          </div>
+        </div>
+
+        <!-- Filter Actions -->
+        <div class="flex items-center gap-3 mt-4">
+          <button @click="applyFilters({ page: 1 })" class="rounded-md bg-primary text-white px-4 py-2 hover:bg-primary/90">
+            Apply Filters
+          </button>
+          <button @click="resetFilters" class="rounded-md border px-4 py-2 hover:bg-gray-50">
+            Reset All
+          </button>
+          <div v-if="hasActiveFilters()" class="text-sm text-muted-foreground">
+            {{ hasActiveFilters() ? '✓ Filters active' : '' }}
+          </div>
+          <div class="ml-auto flex items-center gap-2">
+            <label class="text-sm">Per page:</label>
+            <select v-model.number="state.per_page" @change="applyFilters({ page: 1 })" class="rounded-md border p-1">
+              <option :value="10">10</option>
+              <option :value="25">25</option>
+              <option :value="50">50</option>
+            </select>
+          </div>
         </div>
       </div>
 
-      <div class="mb-4 flex items-center gap-3">
-        <button @click="applyFilters({ page: 1 })" class="rounded-md border px-3 py-2">Apply</button>
-        <button @click="resetFilters" class="rounded-md border px-3 py-2">Reset</button>
-        <div class="ml-auto flex items-center gap-2">
-          <label class="text-sm">Per page:</label>
-          <select v-model.number="state.per_page" @change="applyFilters({ page: 1 })" class="rounded-md border p-1">
-            <option :value="10">10</option>
-            <option :value="25">25</option>
-            <option :value="50">50</option>
-          </select>
-        </div>
-      </div>
-
+      <!-- Tender List -->
       <div class="space-y-4">
         <div 
           v-for="tender in props.tenders.data" 
@@ -253,10 +435,11 @@ function goTo(url: string | null) {
         </div>
 
         <div v-if="props.tenders.data.length === 0" class="text-center py-12 text-muted-foreground">
-          No tenders found.
+          No tenders found matching your criteria.
         </div>
       </div>
 
+      <!-- Pagination -->
       <div class="mt-4 flex flex-wrap items-center justify-between gap-2">
         <div class="text-sm text-muted-foreground">
           Sort: <strong>{{ state.sort_by }}</strong> ({{ state.sort_dir?.toUpperCase() }})
@@ -353,6 +536,21 @@ function goTo(url: string | null) {
                 :class="{ 'border-red-500': bidForm.errors.technical_specifications }"
               />
               <p v-if="bidForm.errors.technical_specifications" class="mt-1 text-sm text-red-500">{{ bidForm.errors.technical_specifications }}</p>
+            </div>
+
+            <div>
+              <label class="block text-sm font-medium mb-1">Attachment</label>
+              <input
+                type="file"
+                @change="handleFileChange"
+                accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png"
+                class="block w-full rounded-md border p-2"
+                :class="{ 'border-red-500': bidForm.errors.attachment }"
+              />
+              <p v-if="bidForm.errors.attachment" class="mt-1 text-sm text-red-500">{{ bidForm.errors.attachment }}</p>
+              <p class="mt-1 text-sm text-muted-foreground">
+                Accepted formats: PDF, DOC, DOCX, XLS, XLSX, JPG, PNG (Max: 10MB)
+              </p>
             </div>
 
             <div class="flex items-center gap-3 pt-4 border-t">

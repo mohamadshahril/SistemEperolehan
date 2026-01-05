@@ -20,7 +20,15 @@ class TenderBidController extends Controller
         $validated = $request->validate([
             'search' => ['nullable', 'string'],
             'status' => ['nullable', Rule::in(['Draft', 'Published', 'Closed', 'Awarded', 'Cancelled'])],
-            'sort_by' => ['nullable', Rule::in(['tender_number', 'title', 'closing_date', 'created_at'])],
+            'year' => ['nullable', 'integer', 'min:2000', 'max:' . (date('Y') + 10)],
+            'opening_date_from' => ['nullable', 'date'],
+            'opening_date_to' => ['nullable', 'date', 'after_or_equal:opening_date_from'],
+            'closing_date_from' => ['nullable', 'date'],
+            'closing_date_to' => ['nullable', 'date', 'after_or_equal:closing_date_from'],
+            'budget_min' => ['nullable', 'numeric', 'min:0'],
+            'budget_max' => ['nullable', 'numeric', 'min:0', 'gte:budget_min'],
+            'quick_filter' => ['nullable', Rule::in(['open_now', 'closing_soon', 'recently_added'])],
+            'sort_by' => ['nullable', Rule::in(['tender_number', 'title', 'closing_date', 'created_at', 'estimated_budget'])],
             'sort_dir' => ['nullable', Rule::in(['asc', 'desc'])],
             'page' => ['nullable', 'integer', 'min:1'],
             'per_page' => ['nullable', 'integer', 'min:1', 'max:100'],
@@ -45,6 +53,54 @@ class TenderBidController extends Controller
             $query->where('status', $status);
         }
 
+        // Filter by year (based on created_at)
+        if ($year = $request->input('year')) {
+            $query->whereYear('created_at', $year);
+        }
+
+        // Quick filters
+        if ($quickFilter = $request->input('quick_filter')) {
+            switch ($quickFilter) {
+                case 'open_now':
+                    $query->where('status', 'Published')
+                        ->whereDate('opening_date', '<=', now())
+                        ->whereDate('closing_date', '>=', now());
+                    break;
+                case 'closing_soon':
+                    $query->where('status', 'Published')
+                        ->whereDate('closing_date', '>=', now())
+                        ->whereDate('closing_date', '<=', now()->addDays(7));
+                    break;
+                case 'recently_added':
+                    $query->where('created_at', '>=', now()->subDays(7));
+                    break;
+            }
+        }
+
+        // Filter by opening date range
+        if ($openingDateFrom = $request->input('opening_date_from')) {
+            $query->whereDate('opening_date', '>=', $openingDateFrom);
+        }
+        if ($openingDateTo = $request->input('opening_date_to')) {
+            $query->whereDate('opening_date', '<=', $openingDateTo);
+        }
+
+        // Filter by closing date range
+        if ($closingDateFrom = $request->input('closing_date_from')) {
+            $query->whereDate('closing_date', '>=', $closingDateFrom);
+        }
+        if ($closingDateTo = $request->input('closing_date_to')) {
+            $query->whereDate('closing_date', '<=', $closingDateTo);
+        }
+
+        // Filter by budget range
+        if ($budgetMin = $request->input('budget_min')) {
+            $query->where('estimated_budget', '>=', $budgetMin);
+        }
+        if ($budgetMax = $request->input('budget_max')) {
+            $query->where('estimated_budget', '<=', $budgetMax);
+        }
+
         // Sorting
         $sortBy = $request->input('sort_by', 'closing_date');
         $sortDir = $request->input('sort_dir', 'asc');
@@ -63,6 +119,14 @@ class TenderBidController extends Controller
             'filters' => [
                 'search' => $request->input('search'),
                 'status' => $request->input('status'),
+                'year' => $request->input('year'),
+                'opening_date_from' => $request->input('opening_date_from'),
+                'opening_date_to' => $request->input('opening_date_to'),
+                'closing_date_from' => $request->input('closing_date_from'),
+                'closing_date_to' => $request->input('closing_date_to'),
+                'budget_min' => $request->input('budget_min'),
+                'budget_max' => $request->input('budget_max'),
+                'quick_filter' => $request->input('quick_filter'),
                 'sort_by' => $request->input('sort_by'),
                 'sort_dir' => $request->input('sort_dir'),
                 'per_page' => $request->input('per_page'),
@@ -82,6 +146,7 @@ class TenderBidController extends Controller
             'proposal' => ['nullable', 'string'],
             'technical_specifications' => ['nullable', 'string'],
             'delivery_timeline_days' => ['nullable', 'integer', 'min:1'],
+            'attachment' => ['nullable', 'file', 'max:10240', 'mimes:pdf,doc,docx,xls,xlsx,jpg,jpeg,png'],
         ]);
 
         $tender = Tender::findOrFail($validated['tender_id']);
@@ -102,6 +167,14 @@ class TenderBidController extends Controller
             return redirect()
                 ->route('tender-bids.index')
                 ->with('error', 'You have already submitted a bid for this tender.');
+        }
+
+        // Handle file upload
+        if ($request->hasFile('attachment')) {
+            $file = $request->file('attachment');
+            $filename = time() . '_' . $file->getClientOriginalName();
+            $path = $file->storeAs('tender-bids', $filename, 'public');
+            $validated['attachment_path'] = $path;
         }
 
         $validated['status'] = 'Submitted';

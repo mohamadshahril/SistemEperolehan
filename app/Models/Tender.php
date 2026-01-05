@@ -53,6 +53,14 @@ class Tender extends Model
     }
 
     /**
+     * Get all documents for this tender
+     */
+    public function documents(): HasMany
+    {
+        return $this->hasMany(TenderDocument::class);
+    }
+
+    /**
      * Get the awarded bid
      */
     public function awardedBid(): BelongsTo

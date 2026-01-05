@@ -1,6 +1,12 @@
 <script setup lang="ts">
 import AppLayout from '@/layouts/AppLayout.vue'
 import { Head, useForm } from '@inertiajs/vue3'
+import { ref } from 'vue'
+
+interface DocumentFile {
+  file: File
+  description: string
+}
 
 const form = useForm({
   title: '',
@@ -11,12 +17,75 @@ const form = useForm({
   status: 'Draft' as 'Draft' | 'Published',
   requirements: '',
   terms_conditions: '',
+  documents: [] as File[],
+  document_descriptions: [] as string[],
 })
 
+const documentFiles = ref<DocumentFile[]>([])
+
+function handleFileSelect(e: Event) {
+  const target = e.target as HTMLInputElement
+  const files = target.files
+  
+  if (files) {
+    Array.from(files).forEach(file => {
+      documentFiles.value.push({
+        file,
+        description: ''
+      })
+    })
+  }
+  
+  // Reset input
+  target.value = ''
+}
+
+function removeDocument(index: number) {
+  documentFiles.value.splice(index, 1)
+}
+
 function submit() {
-  form.post('/tenders', {
-    preserveScroll: true,
+  // Create FormData manually for file uploads
+  const formData = new FormData()
+  
+  // Add basic fields
+  formData.append('title', form.title)
+  formData.append('description', form.description)
+  if (form.estimated_budget) {
+    formData.append('estimated_budget', form.estimated_budget.toString())
+  }
+  formData.append('opening_date', form.opening_date)
+  formData.append('closing_date', form.closing_date)
+  formData.append('status', form.status)
+  if (form.requirements) {
+    formData.append('requirements', form.requirements)
+  }
+  if (form.terms_conditions) {
+    formData.append('terms_conditions', form.terms_conditions)
+  }
+  
+  // Add documents
+  documentFiles.value.forEach((doc, index) => {
+    formData.append(`documents[${index}]`, doc.file)
+    if (doc.description) {
+      formData.append(`document_descriptions[${index}]`, doc.description)
+    }
   })
+  
+  // Submit using Inertia's post with FormData
+  form.post('/tenders', {
+    data: formData,
+    preserveScroll: true,
+    forceFormData: true,
+  })
+}
+
+function formatFileSize(bytes: number): string {
+  if (bytes === 0) return '0 Bytes'
+  const k = 1024
+  const sizes = ['Bytes', 'KB', 'MB', 'GB']
+  const i = Math.floor(Math.log(bytes) / Math.log(k))
+  return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i]
 }
 </script>
 
@@ -141,6 +210,63 @@ function submit() {
               :class="{ 'border-red-500': form.errors.terms_conditions }"
             />
             <p v-if="form.errors.terms_conditions" class="mt-1 text-sm text-red-500">{{ form.errors.terms_conditions }}</p>
+          </div>
+        </div>
+
+        <!-- Document Upload Section -->
+        <div class="rounded-md border bg-white p-6 space-y-4">
+          <h2 class="text-lg font-semibold border-b pb-2">Tender Documents</h2>
+          <p class="text-sm text-muted-foreground">
+            Upload supporting documents for vendors to review (specifications, drawings, terms, etc.)
+          </p>
+
+          <div>
+            <label class="block text-sm font-medium mb-2">Add Documents</label>
+            <input
+              type="file"
+              @change="handleFileSelect"
+              multiple
+              accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png"
+              class="block w-full rounded-md border p-2"
+            />
+            <p class="mt-1 text-sm text-muted-foreground">
+              Accepted formats: PDF, DOC, DOCX, XLS, XLSX, JPG, PNG (Max: 10MB per file)
+            </p>
+          </div>
+
+          <!-- Document List -->
+          <div v-if="documentFiles.length > 0" class="space-y-3">
+            <h3 class="text-sm font-medium">Selected Documents ({{ documentFiles.length }})</h3>
+            <div
+              v-for="(doc, index) in documentFiles"
+              :key="index"
+              class="flex items-start gap-3 p-3 border rounded-md bg-gray-50"
+            >
+              <div class="flex-1 space-y-2">
+                <div class="flex items-center gap-2">
+                  <span class="text-sm font-medium">{{ doc.file.name }}</span>
+                  <span class="text-xs text-muted-foreground">({{ formatFileSize(doc.file.size) }})</span>
+                </div>
+                <input
+                  v-model="doc.description"
+                  type="text"
+                  placeholder="Document description (optional)"
+                  class="block w-full rounded-md border p-2 text-sm"
+                />
+              </div>
+              <button
+                type="button"
+                @click="removeDocument(index)"
+                class="text-red-600 hover:text-red-800 text-sm font-medium"
+              >
+                Remove
+              </button>
+            </div>
+          </div>
+
+          <div v-else class="text-center py-8 text-muted-foreground border-2 border-dashed rounded-md">
+            <p class="text-sm">No documents selected</p>
+            <p class="text-xs mt-1">Click "Add Documents" above to upload files</p>
           </div>
         </div>
 
