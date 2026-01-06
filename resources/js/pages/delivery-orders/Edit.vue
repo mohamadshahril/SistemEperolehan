@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import AppLayout from '@/layouts/AppLayout.vue'
 import { Head, Link, useForm } from '@inertiajs/vue3'
+import { computed } from 'vue'
 
 const props = defineProps<{
   deliveryOrder: {
@@ -27,6 +28,15 @@ const formatDateForInput = (dateString: string) => {
   const day = String(date.getDate()).padStart(2, '0')
   return `${year}-${month}-${day}`
 }
+
+// Get today's date in YYYY-MM-DD format
+const todayDate = computed(() => {
+  const today = new Date()
+  const year = today.getFullYear()
+  const month = String(today.getMonth() + 1).padStart(2, '0')
+  const day = String(today.getDate()).padStart(2, '0')
+  return `${year}-${month}-${day}`
+})
 
 const form = useForm({
   purchase_order_id: String(props.deliveryOrder.purchase_order.id),
@@ -91,6 +101,7 @@ function submit() {
                 v-model="form.delivery_date"
                 type="date"
                 required
+                :max="todayDate"
                 class="mt-1 block w-full rounded-md border p-2"
                 :class="{ 'border-red-500': form.errors.delivery_date }"
               />

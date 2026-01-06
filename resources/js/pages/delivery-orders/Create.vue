@@ -1,11 +1,13 @@
 <script setup lang="ts">
 import AppLayout from '@/layouts/AppLayout.vue'
 import { Head, Link, useForm } from '@inertiajs/vue3'
+import { computed } from 'vue'
 
 const props = defineProps<{
   purchaseOrders: Array<{
     id: number
     order_number: string
+    created_at: string
   }>
 }>()
 
@@ -15,6 +17,42 @@ const form = useForm({
   delivery_date: '',
   delivery_file: null as File | null,
   notes: '',
+})
+
+// Get today's date in YYYY-MM-DD format
+const todayDate = computed(() => {
+  const today = new Date()
+  const year = today.getFullYear()
+  const month = String(today.getMonth() + 1).padStart(2, '0')
+  const day = String(today.getDate()).padStart(2, '0')
+  return `${year}-${month}-${day}`
+})
+
+// Get the selected purchase order
+const selectedPurchaseOrder = computed(() => {
+  if (!form.purchase_order_id) return null
+  return props.purchaseOrders.find(po => String(po.id) === String(form.purchase_order_id))
+})
+
+// Format purchase order date to YYYY-MM-DD
+const purchaseOrderDate = computed(() => {
+  if (!selectedPurchaseOrder.value) return null
+  const date = new Date(selectedPurchaseOrder.value.created_at)
+  const year = date.getFullYear()
+  const month = String(date.getMonth() + 1).padStart(2, '0')
+  const day = String(date.getDate()).padStart(2, '0')
+  return `${year}-${month}-${day}`
+})
+
+// Check if delivery date is earlier than purchase order date
+const isDeliveryDateEarlier = computed(() => {
+  if (!form.delivery_date || !purchaseOrderDate.value) return false
+  return form.delivery_date < purchaseOrderDate.value
+})
+
+// Check if form is valid for submission
+const isFormValid = computed(() => {
+  return !isDeliveryDateEarlier.value
 })
 
 function submit() {
@@ -74,10 +112,15 @@ function submit() {
                 v-model="form.delivery_date"
                 type="date"
                 required
+                :max="todayDate"
                 class="mt-1 block w-full rounded-md border p-2"
                 :class="{ 'border-red-500': form.errors.delivery_date }"
               />
               <p v-if="form.errors.delivery_date" class="mt-1 text-sm text-red-600">{{ form.errors.delivery_date }}</p>
+              <p v-if="purchaseOrderDate && form.delivery_date" class="mt-1 text-xs text-gray-600">Purchase Order Date: {{ purchaseOrderDate }}</p>
+              <p v-if="isDeliveryDateEarlier" class="mt-2 rounded-md bg-yellow-50 p-3 text-sm text-yellow-800 border border-yellow-200">
+                <strong>⚠️ Warning:</strong> The delivery date cannot be earlier than the purchase order date. Please select a date on or after {{ purchaseOrderDate }}.
+              </p>
             </div>
 
             <div>
@@ -110,8 +153,8 @@ function submit() {
           <div class="mt-6 flex items-center gap-3">
             <button
               type="submit"
-              :disabled="form.processing"
-              class="rounded-md bg-primary px-4 py-2 text-white disabled:opacity-50"
+              :disabled="form.processing || !isFormValid"
+              class="rounded-md bg-primary px-4 py-2 text-white disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {{ form.processing ? 'Creating...' : 'Create Delivery Order' }}
             </button>

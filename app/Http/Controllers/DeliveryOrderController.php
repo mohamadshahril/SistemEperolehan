@@ -90,7 +90,7 @@ class DeliveryOrderController extends Controller
     public function create()
     {
         // Fetch purchase orders that haven't been fully delivered yet
-        $purchaseOrders = PurchaseOrder::select('id', 'order_number')->get(); // Adjust selection as needed
+        $purchaseOrders = PurchaseOrder::select('id', 'order_number', 'created_at')->get();
 
         return Inertia::render('delivery-orders/Create', [
             'purchaseOrders' => $purchaseOrders,
