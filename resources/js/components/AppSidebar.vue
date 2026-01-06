@@ -25,8 +25,10 @@ import {
     Truck,
     BarChart3,
     FileText,
+    Gavel,
     ShieldCheck,
     KeyRound,
+    Gavel,
 } from 'lucide-vue-next';
 import AppLogo from './AppLogo.vue';
 import { computed } from 'vue';
@@ -68,6 +70,11 @@ const mainNavItems: NavItem[] = [
         title: 'Tenders',
         href: '/tenders',
         icon: FileText,
+    },
+    {
+        title: 'Tender Bids',
+        href: '/tender-bids',
+        icon: Gavel,
     },
     {
         title: 'Delivery Order',
@@ -138,6 +145,8 @@ const filteredItems = computed(() => {
                 return allow('view purchase orders');
             case 'Tenders':
                 return allow('view tenders');
+            case 'Tender Bids':
+                return allow('view tender bids');
             case 'Delivery Order':
                 return allow('view delivery orders');
             case 'Delivery Report':

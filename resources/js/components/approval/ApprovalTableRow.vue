@@ -41,19 +41,10 @@ const formatDate = (dateString: string | null): string => {
 
 <template>
   <tr class="border-b align-top">
-    <td class="px-3 py-2">
-      <button
-        @click="$emit('view', request.id)"
-        class="inline-flex items-center gap-1 rounded-md border px-2 py-1 text-sm hover:bg-gray-100"
-        title="View details"
-      >
-        <Eye :size="16" />
-      </button>
-    </td>
     <td class="px-3 py-2 font-mono">
-      <a :href="`/approvals/${request.id}`" class="text-primary hover:underline">
-        #{{ request.id }}
-      </a>
+        <a class="text-primary">
+            #{{ request.id }}
+        </a>
     </td>
     <td class="px-3 py-2">{{ request.user.name }}</td>
     <td class="px-3 py-2">{{ request.title }}</td>
@@ -63,6 +54,15 @@ const formatDate = (dateString: string | null): string => {
     <td class="px-3 py-2">
       <StatusBadge :status="request.status" />
     </td>
+      <td class="px-3 py-2">
+          <button
+              @click="$emit('view', request.id)"
+              class="inline-flex items-center gap-1 rounded-md border px-2 py-1 text-sm hover:bg-gray-100"
+              title="View details"
+          >
+              <Eye :size="16" />
+          </button>
+      </td>
   </tr>
 </template>
 

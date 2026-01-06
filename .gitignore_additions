@@ -1,0 +1,10 @@
+# Documentation files (troubleshooting guides)
+BLACK_SCREEN_FIX.md
+BLANK_SCREEN_SOLUTION.md
+SSR_BLACK_SCREEN_FIX.md
+VITE_CONNECTION_REFUSED_FIX.md
+TENDER_NOT_SHOWING_FIX.md
+check-site-status.php
+diagnose-tender-issue.php
+fix-vite-connection.bat
+rebuild-frontend.bat
