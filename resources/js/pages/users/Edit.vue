@@ -6,6 +6,7 @@ const props = defineProps<{
   user: { id: number; name: string; email: string; roles: number[]; permissions: number[] }
   allRoles: Array<{ id: number; name: string }>
   allPermissions: Array<{ id: number; name: string }>
+  canManageDirectPermissions?: boolean
 }>()
 
 const form = useForm({
@@ -42,8 +43,11 @@ function submit() {
           <p v-if="form.errors.role_ids" class="mt-1 text-sm text-red-600">{{ form.errors.role_ids }}</p>
         </div>
 
-        <div class="rounded-md border bg-white p-6">
-          <h2 class="mb-3 text-lg font-medium">Direct Permissions</h2>
+        <div v-if="canManageDirectPermissions" class="rounded-md border bg-white p-6">
+          <h2 class="mb-3 text-lg font-medium">Direct Permissions (Admin Only)</h2>
+          <p class="mb-3 text-sm text-muted-foreground">
+            Direct permissions override role-based permissions. Use this to grant or revoke specific permissions for this user.
+          </p>
           <div class="grid grid-cols-1 gap-2 md:grid-cols-2">
             <label v-for="p in allPermissions" :key="p.id" class="flex items-center gap-2">
               <input type="checkbox" :value="p.id" v-model="form.permission_ids" />

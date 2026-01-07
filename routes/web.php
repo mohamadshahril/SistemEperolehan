@@ -32,15 +32,27 @@ Route::get('dashboard', function () {
 Route::middleware(['auth','verified'])->group(function () {
     // Purchase Requests
     Route::get('purchase-requests', [PurchaseRequestController::class, 'index'])->name('purchase-requests.index');
-    Route::get('purchase-requests/create', [PurchaseRequestController::class, 'create'])->name('purchase-requests.create');
-    Route::post('purchase-requests', [PurchaseRequestController::class, 'store'])->name('purchase-requests.store');
+    Route::get('purchase-requests/create', [PurchaseRequestController::class, 'create'])
+        ->middleware('can:create purchase requests')
+        ->name('purchase-requests.create');
+    Route::post('purchase-requests', [PurchaseRequestController::class, 'store'])
+        ->middleware('can:create purchase requests')
+        ->name('purchase-requests.store');
     Route::get('purchase-requests/{purchaseRequest}', [PurchaseRequestController::class, 'show'])->name('purchase-requests.show');
-    Route::get('purchase-requests/{purchaseRequest}/edit', [PurchaseRequestController::class, 'edit'])->name('purchase-requests.edit');
-    Route::put('purchase-requests/{purchaseRequest}', [PurchaseRequestController::class, 'update'])->name('purchase-requests.update');
+    Route::get('purchase-requests/{purchaseRequest}/edit', [PurchaseRequestController::class, 'edit'])
+        ->middleware('can:create purchase requests')
+        ->name('purchase-requests.edit');
+    Route::put('purchase-requests/{purchaseRequest}', [PurchaseRequestController::class, 'update'])
+        ->middleware('can:create purchase requests')
+        ->name('purchase-requests.update');
     // Backward compatibility: some clients submit POST to the update endpoint
     // Accept POST and route it to the same controller method to avoid 405 errors
-    Route::post('purchase-requests/{purchaseRequest}', [PurchaseRequestController::class, 'update'])->name('purchase-requests.update.post');
-    Route::delete('purchase-requests/{purchaseRequest}', [PurchaseRequestController::class, 'destroy'])->name('purchase-requests.destroy');
+    Route::post('purchase-requests/{purchaseRequest}', [PurchaseRequestController::class, 'update'])
+        ->middleware('can:create purchase requests')
+        ->name('purchase-requests.update.post');
+    Route::delete('purchase-requests/{purchaseRequest}', [PurchaseRequestController::class, 'destroy'])
+        ->middleware('can:create purchase requests')
+        ->name('purchase-requests.destroy');
 
     // Vendors
     Route::resource('vendors', VendorController::class);

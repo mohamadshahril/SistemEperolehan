@@ -124,15 +124,20 @@ const filteredItems = computed(() => {
     const can: Record<string, boolean> = auth?.can || {};
     const isAdmin: boolean = !!auth?.isAdmin;
 
-    // Helper to check permission or admin
-    const allow = (perm?: string) => isAdmin || (!!perm && !!can[perm]);
+    // Admin has access to all modules
+    if (isAdmin) {
+        return mainNavItems;
+    }
+
+    // Helper to check permission
+    const allow = (perm?: string) => !!perm && !!can[perm];
 
     return mainNavItems.filter((item) => {
         switch (item.title) {
             case 'Dashboard':
                 return true;
             case 'Purchase Requests':
-                // Visible to Admin or users who can create PR (e.g., Staff). Managers typically shouldn't see this.
+                // Visible to users who can create PR (e.g., Staff). Managers typically shouldn't see this.
                 return allow('create purchase requests');
             case 'Approvals':
                 return allow('view approvals');
@@ -157,7 +162,7 @@ const filteredItems = computed(() => {
             case 'Item Units':
                 return allow('view item units');
             case 'Users':
-                // Only Admin or manage users should see settings menus
+                // Only manage users should see settings menus
                 return allow('manage users');
             case 'Roles':
                 return allow('manage roles');
