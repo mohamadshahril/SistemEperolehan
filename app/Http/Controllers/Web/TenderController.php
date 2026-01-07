@@ -19,6 +19,9 @@ class TenderController extends Controller
         $validated = $request->validate([
             'search' => ['nullable', 'string'],
             'status' => ['nullable', Rule::in(['Draft', 'Published', 'Closed', 'Awarded', 'Cancelled'])],
+            'from_date' => ['nullable', 'date'],
+            'to_date' => ['nullable', 'date', 'after_or_equal:from_date'],
+            'date_filter_type' => ['nullable', Rule::in(['created_at', 'opening_date', 'closing_date'])],
             'sort_by' => ['nullable', Rule::in(['tender_number', 'title', 'opening_date', 'closing_date', 'status', 'created_at'])],
             'sort_dir' => ['nullable', Rule::in(['asc', 'desc'])],
             'page' => ['nullable', 'integer', 'min:1'],
@@ -27,7 +30,16 @@ class TenderController extends Controller
 
         $query = Tender::query()
             ->withCount('bids')
-            ->with(['creator:id,name', 'awardedBid.vendor:id,name']);
+            ->with([
+                'creator:id,name', 
+                'awardedBid.vendor:id,name',
+                'bids' => function ($query) {
+                    $query->select('id', 'tender_id', 'vendor_id', 'bid_amount', 'status', 'submitted_at')
+                        ->with('vendor:id,name')
+                        ->orderBy('bid_amount', 'asc')
+                        ->limit(10); // Limit to 10 bids for performance
+                }
+            ]);
 
         // Search by tender number, title, or description
         if ($search = $request->string('search')->toString()) {
@@ -41,6 +53,15 @@ class TenderController extends Controller
         // Filter by status
         if ($status = $request->input('status')) {
             $query->where('status', $status);
+        }
+
+        // Filter by date range
+        $dateFilterType = $request->input('date_filter_type', 'created_at');
+        if ($fromDate = $request->input('from_date')) {
+            $query->whereDate($dateFilterType, '>=', $fromDate);
+        }
+        if ($toDate = $request->input('to_date')) {
+            $query->whereDate($dateFilterType, '<=', $toDate);
         }
 
         // Sorting
@@ -57,6 +78,9 @@ class TenderController extends Controller
             'filters' => [
                 'search' => $request->input('search'),
                 'status' => $request->input('status'),
+                'from_date' => $request->input('from_date'),
+                'to_date' => $request->input('to_date'),
+                'date_filter_type' => $request->input('date_filter_type'),
                 'sort_by' => $request->input('sort_by'),
                 'sort_dir' => $request->input('sort_dir'),
                 'per_page' => $request->input('per_page'),
@@ -78,7 +102,7 @@ class TenderController extends Controller
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'title' => ['required', 'string', 'max:255'],
+            'title' => ['required', 'string', 'max:255', 'unique:tenders,title'],
             'description' => ['required', 'string'],
             'estimated_budget' => ['nullable', 'numeric', 'min:0'],
             'opening_date' => ['required', 'date', 'after_or_equal:today'],
@@ -86,6 +110,10 @@ class TenderController extends Controller
             'status' => ['required', Rule::in(['Draft', 'Published'])],
             'requirements' => ['nullable', 'string'],
             'terms_conditions' => ['nullable', 'string'],
+            'documents' => ['nullable', 'array'],
+            'documents.*' => ['file', 'max:10240', 'mimes:pdf,doc,docx,xls,xlsx,jpg,jpeg,png'],
+            'document_descriptions' => ['nullable', 'array'],
+            'document_descriptions.*' => ['nullable', 'string', 'max:255'],
         ]);
 
         $validated['tender_number'] = Tender::generateTenderNumber();
@@ -93,9 +121,26 @@ class TenderController extends Controller
 
         $tender = Tender::create($validated);
 
+        // Handle document uploads
+        if ($request->hasFile('documents')) {
+            foreach ($request->file('documents') as $index => $file) {
+                $fileName = time() . '_' . $file->getClientOriginalName();
+                $filePath = $file->storeAs('tender-documents', $fileName, 'public');
+                
+                $tender->documents()->create([
+                    'file_name' => $file->getClientOriginalName(),
+                    'file_path' => $filePath,
+                    'file_type' => $file->getClientMimeType(),
+                    'file_size' => $file->getSize(),
+                    'description' => $request->input("document_descriptions.{$index}"),
+                    'uploaded_by' => auth()->id(),
+                ]);
+            }
+        }
+
         return redirect()
             ->route('tenders.show', $tender)
-            ->with('success', 'Tender created successfully.');
+            ->with('success', 'Tender created successfully with ' . $tender->documents()->count() . ' document(s).');
     }
 
     /**
@@ -147,7 +192,7 @@ class TenderController extends Controller
         }
 
         $validated = $request->validate([
-            'title' => ['required', 'string', 'max:255'],
+            'title' => ['required', 'string', 'max:255', Rule::unique('tenders')->ignore($tender->id)],
             'description' => ['required', 'string'],
             'estimated_budget' => ['nullable', 'numeric', 'min:0'],
             'opening_date' => ['required', 'date'],
