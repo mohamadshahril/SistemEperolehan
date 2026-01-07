@@ -12,8 +12,8 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('purchase_orders', function (Blueprint $table) {
+            $table->dropIndex('purchase_orders_status_order_number_index');
             $table->dropColumn('status');
-            $table->dropIndex(['status', 'order_number']);
         });
     }
 
