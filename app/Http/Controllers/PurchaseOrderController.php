@@ -16,11 +16,10 @@ class PurchaseOrderController extends Controller
     {
         $validated = $request->validate([
             'search' => ['nullable', 'string'],
-            'status' => ['nullable', Rule::in(['Pending', 'Approved', 'Completed'])],
             'vendor_id' => ['nullable', 'exists:vendors,id'],
             'from_date' => ['nullable', 'date'],
             'to_date' => ['nullable', 'date', 'after_or_equal:from_date'],
-            'sort_by' => ['nullable', Rule::in(['order_number', 'status', 'created_at'])],
+            'sort_by' => ['nullable', Rule::in(['order_number', 'created_at'])],
             'sort_dir' => ['nullable', Rule::in(['asc', 'desc'])],
             'page' => ['nullable', 'integer', 'min:1'],
             'per_page' => ['nullable', 'integer', 'min:1', 'max:100'],
@@ -37,11 +36,6 @@ class PurchaseOrderController extends Controller
                         $vendorQuery->where('name', 'like', "%{$search}%");
                     });
             });
-        }
-
-        // Filter by status
-        if ($status = $request->string('status')->toString()) {
-            $query->where('status', $status);
         }
 
         // Filter by vendor
@@ -77,7 +71,6 @@ class PurchaseOrderController extends Controller
         $validated = $request->validate([
             'vendor_id' => ['required', 'exists:vendors,id'],
             'details' => ['nullable', 'string', 'max:1000'],
-            'status' => ['nullable', Rule::in(['Pending', 'Approved', 'Completed'])],
             'attachment' => ['nullable', 'file', 'mimes:pdf,jpg,jpeg,png,doc,docx,xls,xlsx', 'max:5120'],
         ]);
 
@@ -98,7 +91,6 @@ class PurchaseOrderController extends Controller
             'vendor_id' => $validated['vendor_id'],
             'order_number' => $orderNumber,
             'details' => $validated['details'] ?? null,
-            'status' => $validated['status'] ?? 'Pending',
             'attachment_path' => $attachmentPath,
         ]);
 
@@ -124,7 +116,6 @@ class PurchaseOrderController extends Controller
         $validated = $request->validate([
             'vendor_id' => ['required', 'exists:vendors,id'],
             'details' => ['nullable', 'string', 'max:1000'],
-            'status' => ['required', Rule::in(['Pending', 'Approved', 'Completed'])],
             'attachment' => ['nullable', 'file', 'mimes:pdf,jpg,jpeg,png,doc,docx,xls,xlsx', 'max:5120'],
         ]);
 
@@ -150,13 +141,6 @@ class PurchaseOrderController extends Controller
      */
     public function destroy(PurchaseOrder $purchaseOrder)
     {
-        // Only allow deletion of pending orders
-        if ($purchaseOrder->status !== 'Pending') {
-            return response()->json([
-                'message' => 'Only pending purchase orders can be deleted.',
-            ], 422);
-        }
-
         // Delete attachment if exists
         if ($purchaseOrder->attachment_path && Storage::disk('public')->exists($purchaseOrder->attachment_path)) {
             Storage::disk('public')->delete($purchaseOrder->attachment_path);

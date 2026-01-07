@@ -12,7 +12,6 @@ const props = defineProps<{
 const form = useForm({
   vendor_id: '',
   details: '',
-  status: 'Pending',
   attachment: null as File | null,
 })
 
@@ -64,21 +63,6 @@ function submit() {
                 :class="{ 'border-red-500': form.errors.details }"
               ></textarea>
               <p v-if="form.errors.details" class="mt-1 text-sm text-red-600">{{ form.errors.details }}</p>
-            </div>
-
-            <div>
-              <label class="block text-sm font-medium">Status <span class="text-red-600">*</span></label>
-              <select
-                v-model="form.status"
-                required
-                class="mt-1 block w-full rounded-md border p-2"
-                :class="{ 'border-red-500': form.errors.status }"
-              >
-                <option value="Pending">Pending</option>
-                <option value="Approved">Approved</option>
-                <option value="Completed">Completed</option>
-              </select>
-              <p v-if="form.errors.status" class="mt-1 text-sm text-red-600">{{ form.errors.status }}</p>
             </div>
 
             <div>

@@ -15,7 +15,6 @@ class PurchaseOrder extends Model
         'vendor_id',
         'order_number',
         'details',
-        'status',
         'attachment_path',
     ];
 

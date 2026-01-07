@@ -12,7 +12,6 @@ const props = defineProps<{
       name: string
     }
     details: string | null
-    status: string
     attachment_path: string | null
   }
   vendors: Array<{
@@ -24,17 +23,15 @@ const props = defineProps<{
 const form = useForm({
   vendor_id: props.purchaseOrder.vendor_id,
   details: props.purchaseOrder.details || '',
-  status: props.purchaseOrder.status,
   attachment: null as File | null,
 })
 
 function submit() {
-  form.transform((data: { vendor_id: number; details: string; status: string; attachment: File | null }) => {
+  form.transform((data: { vendor_id: number; details: string; attachment: File | null }) => {
     const formData = new FormData();
     formData.append('_method', 'PUT');
     formData.append('vendor_id', data.vendor_id.toString());
     formData.append('details', data.details);
-    formData.append('status', data.status);
     if (data.attachment) {
       formData.append('attachment', data.attachment);
     }
@@ -87,21 +84,6 @@ function submit() {
                 :class="{ 'border-red-500': form.errors.details }"
               ></textarea>
               <p v-if="form.errors.details" class="mt-1 text-sm text-red-600">{{ form.errors.details }}</p>
-            </div>
-
-            <div>
-              <label class="block text-sm font-medium">Status <span class="text-red-600">*</span></label>
-              <select
-                v-model="form.status"
-                required
-                class="mt-1 block w-full rounded-md border p-2"
-                :class="{ 'border-red-500': form.errors.status }"
-              >
-                <option value="Pending">Pending</option>
-                <option value="Approved">Approved</option>
-                <option value="Completed">Completed</option>
-              </select>
-              <p v-if="form.errors.status" class="mt-1 text-sm text-red-600">{{ form.errors.status }}</p>
             </div>
 
             <div>

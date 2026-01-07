@@ -13,7 +13,6 @@ const props = defineProps<{
         name: string
       }
       details: string | null
-      status: string
       attachment_path: string | null
       created_at: string
     }>
@@ -25,7 +24,6 @@ const props = defineProps<{
   }>
   filters: {
     search?: string | null
-    status?: string | null
     vendor_id?: number | null
     from_date?: string | null
     to_date?: string | null
@@ -33,12 +31,10 @@ const props = defineProps<{
     sort_dir?: 'asc' | 'desc' | null
     per_page?: number | null
   }
-  statuses: string[]
 }>()
 
 const state = reactive({
   search: props.filters.search ?? '',
-  status: props.filters.status ?? '',
   vendor_id: props.filters.vendor_id ?? '',
   from_date: props.filters.from_date ?? '',
   to_date: props.filters.to_date ?? '',
@@ -50,7 +46,6 @@ const state = reactive({
 function applyFilters(extra: Record<string, unknown> = {}) {
   router.get('/purchase-orders', {
     search: state.search || undefined,
-    status: state.status || undefined,
     vendor_id: state.vendor_id || undefined,
     from_date: state.from_date || undefined,
     to_date: state.to_date || undefined,
@@ -63,7 +58,6 @@ function applyFilters(extra: Record<string, unknown> = {}) {
 
 function resetFilters() {
   state.search = ''
-  state.status = ''
   state.vendor_id = ''
   state.from_date = ''
   state.to_date = ''
@@ -85,11 +79,7 @@ function goTo(url: string | null) {
   router.get(url, {}, { preserveState: true, preserveScroll: true })
 }
 
-function destroyPurchaseOrder(id: number, status: string) {
-  if (status !== 'Pending') {
-    alert('Only pending purchase orders can be deleted.')
-    return
-  }
+function destroyPurchaseOrder(id: number) {
   if (!confirm('Are you sure you want to delete this purchase order? This action cannot be undone.')) return
   router.delete(`/purchase-orders/${id}`, {
     preserveScroll: true,
@@ -118,13 +108,6 @@ function destroyPurchaseOrder(id: number, status: string) {
             @keyup.enter="applyFilters({ page: 1 })"
             class="mt-1 block w-full rounded-md border p-2"
           />
-        </div>
-        <div>
-          <label class="block text-sm font-medium">Status</label>
-          <select v-model="state.status" class="mt-1 block w-full rounded-md border p-2">
-            <option value="">All</option>
-            <option v-for="s in props.statuses" :key="s" :value="s">{{ s }}</option>
-          </select>
         </div>
         <div class="md:col-span-2">
           <label class="block text-sm font-medium">Vendor</label>
@@ -169,9 +152,6 @@ function destroyPurchaseOrder(id: number, status: string) {
               <th class="px-4 py-2 text-left text-sm font-medium">Vendor</th>
               <th class="px-4 py-2 text-left text-sm font-medium">Details</th>
               <th class="px-4 py-2 text-left text-sm font-medium">
-                <button @click="sortBy('status')" class="hover:underline">Status</button>
-              </th>
-              <th class="px-4 py-2 text-left text-sm font-medium">
                 <button @click="sortBy('created_at')" class="hover:underline">Created</button>
               </th>
               <th class="px-4 py-2 text-left text-sm font-medium">Actions</th>
@@ -202,27 +182,14 @@ function destroyPurchaseOrder(id: number, status: string) {
                   {{ row.details || '-' }}
                 </div>
               </td>
-              <td class="px-4 py-2">
-                <span
-                  class="inline-flex items-center rounded-full px-2 py-0.5 text-xs"
-                  :class="{
-                    'bg-yellow-100 text-yellow-800': row.status === 'Pending',
-                    'bg-green-100 text-green-800': row.status === 'Approved',
-                    'bg-blue-100 text-blue-800': row.status === 'Completed',
-                  }"
-                >
-                  {{ row.status }}
-                </span>
-              </td>
               <td class="px-4 py-2">{{ new Date(row.created_at).toLocaleDateString('en-GB', { timeZone: 'UTC' }) }}</td>
               <td class="px-4 py-2">
                 <div class="flex items-center gap-3">
                   <Link :href="`/purchase-orders/${row.id}/edit`" class="text-primary hover:underline">Edit</Link>
                   <button 
-                    @click="destroyPurchaseOrder(row.id, row.status)" 
-                    class="hover:underline"
-                    :class="row.status !== 'Pending' ? 'text-gray-400 cursor-not-allowed' : 'text-red-600'"
-                    :title="row.status !== 'Pending' ? 'Only pending orders can be deleted' : 'Delete purchase order'"
+                    @click="destroyPurchaseOrder(row.id)" 
+                    class="text-red-600 hover:underline"
+                    title="Delete purchase order"
                   >
                     Delete
                   </button>
@@ -230,7 +197,7 @@ function destroyPurchaseOrder(id: number, status: string) {
               </td>
             </tr>
             <tr v-if="props.purchaseOrders.data.length === 0">
-              <td colspan="6" class="px-4 py-8 text-center text-muted-foreground">No purchase orders found.</td>
+              <td colspan="5" class="px-4 py-8 text-center text-muted-foreground">No purchase orders found.</td>
             </tr>
           </tbody>
         </table>
