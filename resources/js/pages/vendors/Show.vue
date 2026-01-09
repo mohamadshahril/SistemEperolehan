@@ -19,7 +19,6 @@ const props = defineProps<{
     purchase_orders: Array<{
       id: number
       order_number: string
-      status: string
       created_at: string
     }>
   }
@@ -31,17 +30,6 @@ function formatDate(date: string): string {
     month: 'short',
     year: 'numeric',
   })
-}
-
-function getStatusColor(status: string): string {
-  const colors: Record<string, string> = {
-    Draft: 'bg-gray-100 text-gray-800',
-    Pending: 'bg-yellow-100 text-yellow-800',
-    Approved: 'bg-green-100 text-green-800',
-    Rejected: 'bg-red-100 text-red-800',
-    Completed: 'bg-blue-100 text-blue-800',
-  }
-  return colors[status] || 'bg-gray-100 text-gray-800'
 }
 </script>
 
@@ -104,12 +92,17 @@ function getStatusColor(status: string): string {
       <div class="rounded-lg border bg-white p-6">
         <h2 class="text-lg font-semibold mb-4">Address</h2>
         <div class="space-y-2">
-          <p class="text-base">{{ props.vendor.address_line1 }}</p>
-          <p v-if="props.vendor.address_line2" class="text-base">{{ props.vendor.address_line2 }}</p>
-          <p class="text-base">
-            {{ props.vendor.postcode }} {{ props.vendor.city }}, {{ props.vendor.state }}
-          </p>
-          <p class="text-base">{{ props.vendor.country }}</p>
+          <template v-if="props.vendor.address_line1">
+            <p class="text-base">{{ props.vendor.address_line1 }}</p>
+            <p v-if="props.vendor.address_line2" class="text-base">{{ props.vendor.address_line2 }}</p>
+            <p class="text-base">
+              {{ props.vendor.postcode }} {{ props.vendor.city }}, {{ props.vendor.state }}
+            </p>
+            <p class="text-base">{{ props.vendor.country }}</p>
+          </template>
+          <template v-else>
+            <p class="text-base">{{ props.vendor.address || '-' }}</p>
+          </template>
         </div>
       </div>
 
@@ -118,7 +111,7 @@ function getStatusColor(status: string): string {
         <h2 class="text-lg font-semibold mb-4">
           Purchase Orders ({{ props.vendor.purchase_orders.length }})
         </h2>
-        
+
         <div v-if="props.vendor.purchase_orders.length === 0" class="text-center py-8 text-muted-foreground">
           No purchase orders found for this vendor.
         </div>
@@ -140,12 +133,6 @@ function getStatusColor(status: string): string {
                 Created: {{ formatDate(order.created_at) }}
               </p>
             </div>
-            <span
-              class="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium"
-              :class="getStatusColor(order.status)"
-            >
-              {{ order.status }}
-            </span>
           </div>
         </div>
       </div>

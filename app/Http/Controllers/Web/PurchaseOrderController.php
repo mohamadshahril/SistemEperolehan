@@ -28,7 +28,11 @@ class PurchaseOrderController extends Controller
             'per_page' => ['nullable', 'integer', 'min:1', 'max:100'],
         ]);
 
-        $query = PurchaseOrder::query()->with('vendor');
+        $query = PurchaseOrder::query()->with([
+            'vendor' => function ($q) {
+                $q->withTrashed();
+            }
+        ]);
 
         // Search by order number or details
         if ($search = $request->string('search')->toString()) {
@@ -104,12 +108,12 @@ class PurchaseOrderController extends Controller
 
         // Generate unique order number
         $date = now()->format('Ymd');
-        
+
         // Count all orders created today (including soft-deleted) to get the next sequence
         $count = PurchaseOrder::withTrashed()
             ->whereDate('created_at', now()->toDateString())
             ->count();
-        
+
         $sequence = $count + 1;
         $orderNumber = sprintf('PO-%s-%04d', $date, $sequence);
 
@@ -133,7 +137,9 @@ class PurchaseOrderController extends Controller
     public function show(PurchaseOrder $purchaseOrder)
     {
         return Inertia::render('purchase-orders/Show', [
-            'purchaseOrder' => $purchaseOrder->load('vendor'),
+            'purchaseOrder' => $purchaseOrder->load(['vendor' => function ($q) {
+                $q->withTrashed();
+            }]),
         ]);
     }
 
@@ -145,7 +151,9 @@ class PurchaseOrderController extends Controller
         $vendors = Vendor::orderBy('name')->get(['id', 'name']);
 
         return Inertia::render('purchase-orders/Edit', [
-            'purchaseOrder' => $purchaseOrder->load('vendor'),
+            'purchaseOrder' => $purchaseOrder->load(['vendor' => function ($q) {
+                $q->withTrashed();
+            }]),
             'vendors' => $vendors,
         ]);
     }

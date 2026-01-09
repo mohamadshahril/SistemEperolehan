@@ -21,7 +21,6 @@ const props = defineProps<{
       purchase_orders?: Array<{
         id: number
         order_number: string
-        status: string
         created_at: string
       }>
       created_at: string
@@ -65,7 +64,7 @@ const tooltipPosition = ref({ top: 0, left: 0 })
 
 function showTooltip(event: MouseEvent, vendorId: number) {
   hoveredVendor.value = vendorId
-  const rect = (event.target as HTMLElement).getBoundingClientRect()
+  const rect = (event.currentTarget as HTMLElement).getBoundingClientRect()
   tooltipPosition.value = {
     top: rect.bottom + window.scrollY + 8,
     left: rect.left + window.scrollX
@@ -187,17 +186,17 @@ function destroyVendor(id: number) {
               </td>
               <td class="px-4 py-2">
                 <div v-if="row.purchase_orders_count > 0" class="inline-block">
-                  <button 
+                  <button
                     @mouseenter="showTooltip($event, row.id)"
                     @mouseleave="hideTooltip"
                     class="inline-flex items-center rounded-full bg-blue-100 px-2 py-0.5 text-xs text-blue-800 hover:bg-blue-200 transition-colors cursor-pointer"
                   >
                     {{ row.purchase_orders_count }} orders
                   </button>
-                  
+
                   <!-- Hover Preview Tooltip - Fixed positioning to prevent clipping -->
                   <Teleport to="body">
-                    <div 
+                    <div
                       v-if="hoveredVendor === row.id"
                       @mouseenter="hoveredVendor = row.id"
                       @mouseleave="hideTooltip"
@@ -210,8 +209,8 @@ function destroyVendor(id: number) {
                       <div class="space-y-2">
                         <h4 class="font-semibold text-sm text-gray-900 border-b border-gray-200 pb-2">Recent Purchase Orders</h4>
                         <div class="space-y-2 max-h-80 overflow-y-auto pr-1">
-                          <div 
-                            v-for="po in row.purchase_orders" 
+                          <div
+                            v-for="po in row.purchase_orders"
                             :key="po.id"
                             class="flex items-start justify-between gap-2 p-2 rounded-md bg-gray-50 hover:bg-gray-100 transition-colors"
                           >
@@ -221,23 +220,11 @@ function destroyVendor(id: number) {
                                 {{ new Date(po.created_at).toLocaleDateString('en-GB', { timeZone: 'UTC' }) }}
                               </div>
                             </div>
-                            <span 
-                              class="flex-shrink-0 px-2 py-0.5 rounded-full text-xs font-medium whitespace-nowrap"
-                              :class="{
-                                'bg-yellow-100 text-yellow-800': po.status === 'Pending',
-                                'bg-green-100 text-green-800': po.status === 'Completed',
-                                'bg-blue-100 text-blue-800': po.status === 'Processing',
-                                'bg-red-100 text-red-800': po.status === 'Cancelled',
-                                'bg-gray-100 text-gray-800': !['Pending', 'Completed', 'Processing', 'Cancelled'].includes(po.status)
-                              }"
-                            >
-                              {{ po.status }}
-                            </span>
                           </div>
                         </div>
                         <div v-if="row.purchase_orders_count > 5" class="pt-2 border-t border-gray-200">
-                          <Link 
-                            :href="`/purchase-orders?vendor_id=${row.id}`" 
+                          <Link
+                            :href="`/purchase-orders?vendor_id=${row.id}`"
                             class="text-xs text-blue-600 hover:text-blue-800 hover:underline font-medium inline-block"
                           >
                             View all {{ row.purchase_orders_count }} orders →
@@ -256,13 +243,14 @@ function destroyVendor(id: number) {
               <td class="px-4 py-2">{{ new Date(row.created_at).toLocaleDateString('en-GB', { timeZone: 'UTC' }) }}</td>
               <td class="px-4 py-2">
                 <div class="flex items-center gap-3">
+                  <Link :href="`/vendors/${row.id}`" class="text-primary hover:underline">View</Link>
                   <Link :href="`/vendors/${row.id}/edit`" class="text-primary hover:underline">Edit</Link>
-                  <button 
-                    @click="destroyVendor(row.id)" 
+                  <button
+                    @click="destroyVendor(row.id)"
                     class="hover:underline"
-                    :class="row.purchase_orders_count > 0 ? 'text-gray-400 cursor-not-allowed' : 'text-red-600'"
-                    :disabled="row.purchase_orders_count > 0"
-                    :title="row.purchase_orders_count > 0 ? 'Cannot delete vendor with purchase orders' : 'Delete vendor'"
+                    :class="(row.purchase_orders_count || 0) > 0 ? 'text-gray-400 cursor-not-allowed' : 'text-red-600'"
+                    :disabled="(row.purchase_orders_count || 0) > 0"
+                    :title="(row.purchase_orders_count || 0) > 0 ? 'Cannot delete vendor with purchase orders' : 'Delete vendor'"
                   >
                     Delete
                   </button>

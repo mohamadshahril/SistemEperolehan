@@ -24,7 +24,7 @@ const form = useForm({
   name: props.vendor.name,
   email: props.vendor.email || '',
   phone: props.vendor.phone || '',
-  address_line1: props.vendor.address_line1 || '',
+  address_line1: props.vendor.address_line1 || props.vendor.address || '',
   address_line2: props.vendor.address_line2 || '',
   city: props.vendor.city || '',
   state: props.vendor.state || '',
@@ -103,7 +103,7 @@ function submit() {
             <!-- Address Section -->
             <div class="space-y-4 rounded-md border p-4">
               <h3 class="text-lg font-medium">Address Information</h3>
-              
+
               <div>
                 <label class="block text-sm font-medium">Address Line 1 (Street, Building/Factory Number) <span class="text-red-600">*</span></label>
                 <input

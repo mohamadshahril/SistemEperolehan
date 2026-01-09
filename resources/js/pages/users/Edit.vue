@@ -3,13 +3,17 @@ import AppLayout from '@/layouts/AppLayout.vue'
 import { Head, useForm } from '@inertiajs/vue3'
 
 const props = defineProps<{
-  user: { id: number; name: string; email: string; roles: number[]; permissions: number[] }
+  user: { id: number; name: string; email: string; roles: number[]; permissions: number[]; location_iso_code?: string }
   allRoles: Array<{ id: number; name: string }>
   allPermissions: Array<{ id: number; name: string }>
+  locations: Array<{ location_iso_code: string; location_name: string }>
   canManageDirectPermissions?: boolean
 }>()
 
 const form = useForm({
+  name: props.user.name,
+  email: props.user.email,
+  location_iso_code: props.user.location_iso_code || '',
   role_ids: (props.user.roles || []) as number[],
   permission_ids: (props.user.permissions || []) as number[],
 })
@@ -32,6 +36,32 @@ function submit() {
       </div>
 
       <div class="max-w-3xl space-y-6">
+        <div class="rounded-md border bg-white p-6">
+          <h2 class="mb-3 text-lg font-medium">Profile Information</h2>
+          <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
+            <div>
+              <label class="block text-sm font-medium">Name</label>
+              <input v-model="form.name" type="text" class="mt-1 block w-full rounded-md border p-2" />
+              <p v-if="form.errors.name" class="mt-1 text-sm text-red-600">{{ form.errors.name }}</p>
+            </div>
+            <div>
+              <label class="block text-sm font-medium">Email</label>
+              <input v-model="form.email" type="email" class="mt-1 block w-full rounded-md border p-2" />
+              <p v-if="form.errors.email" class="mt-1 text-sm text-red-600">{{ form.errors.email }}</p>
+            </div>
+            <div class="md:col-span-2">
+              <label class="block text-sm font-medium">Location</label>
+              <select v-model="form.location_iso_code" class="mt-1 block w-full rounded-md border p-2">
+                <option value="">Select Location</option>
+                <option v-for="loc in locations" :key="loc.location_iso_code" :value="loc.location_iso_code">
+                  {{ loc.location_name }} ({{ loc.location_iso_code }})
+                </option>
+              </select>
+              <p v-if="form.errors.location_iso_code" class="mt-1 text-sm text-red-600">{{ form.errors.location_iso_code }}</p>
+            </div>
+          </div>
+        </div>
+
         <div class="rounded-md border bg-white p-6">
           <h2 class="mb-3 text-lg font-medium">Roles</h2>
           <div class="grid grid-cols-1 gap-2 md:grid-cols-2">

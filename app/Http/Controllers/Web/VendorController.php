@@ -26,7 +26,7 @@ class VendorController extends Controller
         $vendorQuery = Vendor::query()
             ->withCount('purchaseOrders')
             ->with(['purchaseOrders' => function ($q) {
-                $q->select('id', 'vendor_id', 'order_number', 'status', 'created_at')
+                $q->select('id', 'vendor_id', 'order_number', 'created_at')
                     ->latest()
                     ->limit(5);
             }]);
@@ -104,7 +104,7 @@ class VendorController extends Controller
     public function show(Vendor $vendor)
     {
         $vendor->load('purchaseOrders');
-        
+
         return Inertia::render('vendors/Show', [
             'vendor' => $vendor,
         ]);
@@ -155,6 +155,13 @@ class VendorController extends Controller
             return redirect()
                 ->route('vendors.index')
                 ->with('error', 'Cannot delete vendor with existing purchase orders.');
+        }
+
+        // Check if vendor has any tender bids
+        if ($vendor->tenderBids()->exists()) {
+            return redirect()
+                ->route('vendors.index')
+                ->with('error', 'Cannot delete vendor with existing tender bids.');
         }
 
         $vendor->delete();
