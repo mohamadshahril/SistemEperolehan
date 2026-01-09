@@ -31,7 +31,9 @@ class TenderController extends Controller
         $query = Tender::query()
             ->withCount('bids')
             ->with([
-                'creator:id,name', 
+                'creator' => function ($q) {
+                    $q->withTrashed()->select('id', 'name');
+                },
                 'awardedBid.vendor:id,name',
                 'bids' => function ($query) {
                     $query->select('id', 'tender_id', 'vendor_id', 'bid_amount', 'status', 'submitted_at')
@@ -126,7 +128,7 @@ class TenderController extends Controller
             foreach ($request->file('documents') as $index => $file) {
                 $fileName = time() . '_' . $file->getClientOriginalName();
                 $filePath = $file->storeAs('tender-documents', $fileName, 'public');
-                
+
                 $tender->documents()->create([
                     'file_name' => $file->getClientOriginalName(),
                     'file_path' => $filePath,
@@ -149,7 +151,9 @@ class TenderController extends Controller
     public function show(Tender $tender)
     {
         $tender->load([
-            'creator:id,name,email',
+            'creator' => function ($q) {
+                $q->withTrashed()->select('id', 'name', 'email');
+            },
             'bids' => function ($query) {
                 $query->with('vendor:id,name,email,phone')
                     ->orderBy('bid_amount', 'asc');

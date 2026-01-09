@@ -116,7 +116,12 @@ class PurchaseRequestController extends Controller
         ]);
 
         $query = PurchaseRequest::query()
-            ->with(['user:id,name,email', 'statusRef:id,name']);
+            ->with([
+                'user' => function ($q) {
+                    $q->withTrashed()->select('id', 'name', 'email');
+                },
+                'statusRef:id,name'
+            ]);
 
         // Status filter (default to Pending for backward compatibility)
         $statusParam = $request->string('status')->toString();
@@ -207,8 +212,12 @@ class PurchaseRequestController extends Controller
      */
     public function approvalsShow(PurchaseRequest $purchaseRequest)
     {
-        // Eager load relations for display
-        $purchaseRequest->load(['user:id,name,email', 'approvedBy:id,name', 'items']);
+        // Eager load relations for display, including trashed users
+        $purchaseRequest->load([
+            'user' => fn($q) => $q->withTrashed()->select('id', 'name', 'email'),
+            'approvedBy' => fn($q) => $q->withTrashed()->select('id', 'name'),
+            'items'
+        ]);
 
         return Inertia::render('approvals/Show', [
             'request' => [
@@ -236,10 +245,14 @@ class PurchaseRequestController extends Controller
                     'id' => $purchaseRequest->approvedBy->id,
                     'name' => $purchaseRequest->approvedBy->name,
                 ] : null,
-                'user' => [
+                'user' => $purchaseRequest->user ? [
                     'id' => $purchaseRequest->user->id,
                     'name' => $purchaseRequest->user->name,
                     'email' => $purchaseRequest->user->email,
+                ] : [
+                    'id' => 0,
+                    'name' => 'Deleted User',
+                    'email' => '-',
                 ],
             ],
         ]);
@@ -526,6 +539,13 @@ class PurchaseRequestController extends Controller
         // Ownership check
         abort_if($purchaseRequest->user_id !== $request->user()->id, 403);
 
+        // Eager load relations for display, including trashed users if needed
+        $purchaseRequest->load([
+            'user' => fn($q) => $q->withTrashed()->select('id', 'name', 'email'),
+            'approvedBy' => fn($q) => $q->withTrashed()->select('id', 'name'),
+            'items'
+        ]);
+
         // Load single-option lists so the read-only form can render selected labels
         $typeProcurements = DB::table('type_procurements')
             ->select('id', 'procurement_code', 'procurement_description')
@@ -561,7 +581,7 @@ class PurchaseRequestController extends Controller
                 'vot_id' => $purchaseRequest->vot_id,
                 'location_iso_code' => $purchaseRequest->location_iso_code,
                 'budget' => $purchaseRequest->budget,
-                'item' => $purchaseRequest->items()->get()->map(function ($it) {
+                'item' => $purchaseRequest->items->map(function ($it) {
                     return [
                         'item_no' => null,
                         'details' => $it->item_name,
@@ -572,7 +592,7 @@ class PurchaseRequestController extends Controller
                         'unit' => $it->unit,
                     ];
                 }),
-                'items' => $purchaseRequest->items()->get()->map(function ($it) {
+                'items' => $purchaseRequest->items->map(function ($it) {
                     return [
                         'item_no' => null,
                         'details' => $it->item_name,
@@ -590,6 +610,12 @@ class PurchaseRequestController extends Controller
                 'attachment_path' => $purchaseRequest->attachment_path,
                 'attachment_url' => $purchaseRequest->attachment_path ? Storage::disk('public')->url($purchaseRequest->attachment_path) : null,
                 'purchase_ref_no' => $purchaseRequest->purchase_ref_no,
+                'approved_by' => $purchaseRequest->approvedBy ? [
+                    'id' => $purchaseRequest->approvedBy->id,
+                    'name' => $purchaseRequest->approvedBy->name,
+                ] : null,
+                'approved_at' => $purchaseRequest->approved_at,
+                'approval_remarks' => $purchaseRequest->approval_remarks,
             ],
             'options' => [
                 'type_procurements' => $typeProcurements,

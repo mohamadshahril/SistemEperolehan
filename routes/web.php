@@ -3,6 +3,7 @@
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 use Laravel\Fortify\Features;
+use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\PurchaseRequestController;
 use App\Http\Controllers\Web\VendorController;
 use App\Http\Controllers\Web\PurchaseOrderController;
@@ -25,9 +26,7 @@ Route::get('/', function () {
     ]);
 })->name('home');
 
-Route::get('dashboard', function () {
-    return Inertia::render('Dashboard');
-})->middleware(['auth', 'verified'])->name('dashboard');
+Route::get('dashboard', [DashboardController::class, 'index'])->middleware(['auth', 'verified'])->name('dashboard');
 
 Route::middleware(['auth','verified'])->group(function () {
     // Purchase Requests
@@ -123,7 +122,8 @@ Route::middleware(['auth','verified'])->group(function () {
     // User / Role / Permission Management (Settings) - restrict to managers of settings (typically Admin only)
     Route::resource('roles', RoleController::class)->middleware('can:manage roles');
     Route::resource('permissions', PermissionController::class)->except(['show'])->middleware('can:manage permissions');
-    Route::resource('users', UserController::class)->only(['index','edit','update'])->middleware('can:manage users');
+    Route::resource('users', UserController::class)->only(['index','show','edit','update','destroy'])->middleware('can:manage users');
+    Route::post('users/{user}/restore', [UserController::class, 'restore'])->name('users.restore')->middleware('can:manage users');
 });
 
 require __DIR__.'/settings.php';

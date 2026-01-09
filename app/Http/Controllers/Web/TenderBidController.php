@@ -36,7 +36,11 @@ class TenderBidController extends Controller
 
         $query = Tender::query()
             ->withCount('bids')
-            ->with(['creator:id,name']);
+            ->with([
+                'creator' => function ($q) {
+                    $q->withTrashed()->select('id', 'name');
+                }
+            ]);
 
         // Search
         if ($search = $request->string('search')->toString()) {
@@ -192,7 +196,14 @@ class TenderBidController extends Controller
      */
     public function show(TenderBid $tenderBid)
     {
-        $tenderBid->load(['tender', 'vendor']);
+        $tenderBid->load([
+            'tender' => function ($q) {
+                $q->withTrashed();
+            },
+            'vendor' => function ($q) {
+                $q->withTrashed();
+            }
+        ]);
 
         return Inertia::render('tender-bids/Show', [
             'bid' => $tenderBid,

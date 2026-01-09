@@ -26,7 +26,11 @@ class DeliveryOrderController extends Controller
             'sort_dir' => $request->query('sort_dir', 'desc'),
         ];
 
-        $query = DeliveryOrder::with('purchaseOrder.vendor')
+        $query = DeliveryOrder::with([
+            'purchaseOrder.vendor' => function ($q) {
+                $q->withTrashed();
+            }
+        ])
             ->whereHas('purchaseOrder', function ($q) {
                 $q->whereNull('deleted_at');
             });
