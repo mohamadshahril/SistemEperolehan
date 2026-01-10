@@ -34,78 +34,9 @@ class DatabaseSeeder extends Seeder
         ]);
 
         // Seed vendors
-        try {
-            if (DB::getSchemaBuilder()->hasTable('vendors')) {
-                $vendorsData = [
-                    [
-                        'name' => 'Acme Supplies Sdn Bhd',
-                        'email' => 'sales@acme.example',
-                        'phone' => '+60-3-1111-2222',
-                        'address' => 'Lot 1, Jalan Industri 1, 43000 Kajang, Selangor',
-                    ],
-                    [
-                        'name' => 'Borneo Tech Enterprise',
-                        'email' => 'hello@borneo-tech.example',
-                        'phone' => '+60-82-123456',
-                        'address' => 'No. 12, Jalan Tun Jugah, 93350 Kuching, Sarawak',
-                    ],
-                    [
-                        'name' => 'Metro Office Solutions',
-                        'email' => 'contact@metro-office.example',
-                        'phone' => '+60-3-2222-3333',
-                        'address' => '23-1, Jalan Ampang, 50450 Kuala Lumpur',
-                    ],
-                ];
-
-                $vendors = [];
-                foreach ($vendorsData as $data) {
-                    $vendors[] = Vendor::updateOrCreate(
-                        ['name' => $data['name']],
-                        $data
-                    );
-                }
-
-                // Seed purchase orders linked to the above vendors
-                if (DB::getSchemaBuilder()->hasTable('purchase_orders')) {
-                    // Ensure we have at least one vendor to attach
-                    if (!empty($vendors)) {
-                        $pos = [
-                            [
-                                'order_number' => 'PO-2025-0001',
-                                'vendor' => $vendors[0],
-                                'details' => 'Office stationery purchase',
-                                'status' => 'Pending',
-                            ],
-                            [
-                                'order_number' => 'PO-2025-0002',
-                                'vendor' => $vendors[1] ?? $vendors[0],
-                                'details' => 'IT peripherals (mice, keyboards)',
-                                'status' => 'Approved',
-                            ],
-                            [
-                                'order_number' => 'PO-2025-0003',
-                                'vendor' => $vendors[2] ?? $vendors[0],
-                                'details' => 'Printer toner cartridges',
-                                'status' => 'Completed',
-                            ],
-                        ];
-
-                        foreach ($pos as $po) {
-                            PurchaseOrder::updateOrCreate(
-                                ['order_number' => $po['order_number']],
-                                [
-                                    'vendor_id' => $po['vendor']->id,
-                                    'details' => $po['details'],
-                                    'status' => $po['status'],
-                                ]
-                            );
-                        }
-                    }
-                }
-            }
-        } catch (\Throwable $e) {
-            // Ignore if tables not migrated yet
-        }
+        $this->call([
+            PurchaseOrderSeeder::class,
+        ]);
 
         // Seed delivery orders
         $this->call([

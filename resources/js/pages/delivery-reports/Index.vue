@@ -55,7 +55,7 @@ const state = reactive({
   report_type: props.filters.report_type ?? 'list',
   sort_by: props.filters.sort_by ?? 'delivery_date',
   sort_dir: (props.filters.sort_dir as 'asc' | 'desc' | null) ?? 'desc',
-  selected_period: null as string | null,
+  selected_period: (props.filters.selected_period as string | null) ?? null,
 })
 
 function applyFilters(extra: Record<string, unknown> = {}) {
@@ -65,6 +65,7 @@ function applyFilters(extra: Record<string, unknown> = {}) {
     vendor_id: state.vendor_id || undefined,
     status: state.status || undefined,
     report_type: state.report_type || undefined,
+    selected_period: state.selected_period || undefined,
     sort_by: state.sort_by || undefined,
     sort_dir: state.sort_dir || undefined,
     ...extra,
@@ -105,29 +106,12 @@ const formatDateMalaysia = (dateString: string) => {
 
 // Function to get delivery orders for selected period
 function getOrdersForPeriod(): DeliveryOrderItem[] {
-  if (!state.selected_period || state.report_type === 'list') {
-    return props.deliveryOrders.data
-  }
-
-  return props.deliveryOrders.data.filter(order => {
-    const orderDate = new Date(order.delivery_date)
-    const year = orderDate.getFullYear()
-    const month = String(orderDate.getMonth() + 1).padStart(2, '0')
-    const quarter = Math.ceil((orderDate.getMonth() + 1) / 3)
-
-    if (state.report_type === 'monthly') {
-      return state.selected_period === `${year}-${month}`
-    } else if (state.report_type === 'quarterly') {
-      return state.selected_period === `${year}-Q${quarter}`
-    } else if (state.report_type === 'yearly') {
-      return state.selected_period === String(year)
-    }
-    return true
-  })
+  return props.deliveryOrders.data
 }
 
 function selectPeriod(period: string) {
   state.selected_period = state.selected_period === period ? null : period
+  applyFilters({ page: 1 })
 }
 
 function exportToPdf() {
@@ -246,7 +230,7 @@ function exportToPdf() {
               </tr>
             </thead>
             <tbody class="divide-y">
-              <tr v-for="period in props.periodData" :key="period.period" 
+              <tr v-for="period in props.periodData" :key="period.period"
                   class="odd:bg-white even:bg-muted/10 cursor-pointer hover:bg-blue-50 transition-colors"
                   @click="selectPeriod(period.period)">
                 <td class="px-4 py-2 font-medium" :class="{ 'text-blue-600 font-bold': state.selected_period === period.period }">
@@ -279,7 +263,7 @@ function exportToPdf() {
         <div v-if="state.selected_period" class="rounded-md border bg-white p-4">
           <div class="mb-4 flex items-center justify-between">
             <h3 class="text-lg font-semibold">Delivery Orders - {{ props.periodData.find(p => p.period === state.selected_period)?.label }}</h3>
-            <button @click="state.selected_period = null" class="text-sm text-gray-500 hover:text-gray-700">Close</button>
+            <button @click="selectPeriod(state.selected_period)" class="text-sm text-gray-500 hover:text-gray-700">Close</button>
           </div>
 
           <div class="overflow-x-auto">
@@ -337,7 +321,7 @@ function exportToPdf() {
               <td class="px-4 py-2 font-mono">{{ row.do_number }}</td>
               <td class="px-4 py-2">{{ row.purchase_order.order_number }}</td>
               <td class="px-4 py-2">{{ row.purchase_order.vendor.name }}</td>
-              
+
               <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ formatDateMalaysia(row.delivery_date) }}</td>
               <td class="px-4 py-2">
                 <span :class="row.is_received ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'" class="inline-flex rounded-full px-2 text-xs font-semibold leading-5">
@@ -352,8 +336,8 @@ function exportToPdf() {
         </table>
       </div>
 
-      <!-- Pagination (only in list view) -->
-      <div v-if="state.report_type === 'list'" class="mt-4 flex flex-wrap items-center justify-between gap-2">
+      <!-- Pagination -->
+      <div v-if="state.report_type === 'list' || state.selected_period" class="mt-4 flex flex-wrap items-center justify-between gap-2">
         <nav class="flex flex-wrap gap-1">
           <button
             v-for="link in props.deliveryOrders.links"

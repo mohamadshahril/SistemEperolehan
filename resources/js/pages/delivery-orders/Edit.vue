@@ -39,6 +39,7 @@ const todayDate = computed(() => {
 })
 
 const form = useForm({
+  _method: 'PUT',
   purchase_order_id: String(props.deliveryOrder.purchase_order.id),
   do_number: props.deliveryOrder.do_number,
   delivery_date: formatDateForInput(props.deliveryOrder.delivery_date),
@@ -48,7 +49,6 @@ const form = useForm({
 
 function submit() {
   form.post(`/delivery-orders/${props.deliveryOrder.id}`, {
-    forceFormData: true,
     preserveScroll: true,
     onSuccess: () => {},
   })

@@ -8,6 +8,7 @@ use App\Models\Vendor;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use App\Http\Requests\DeliveryOrderStoreRequest;
+use App\Http\Requests\DeliveryOrderUpdateRequest;
 use Illuminate\Support\Facades\Storage;
 
 class DeliveryOrderController extends Controller
@@ -160,15 +161,9 @@ class DeliveryOrderController extends Controller
     }
 
     // Update action
-    public function update(Request $request, DeliveryOrder $deliveryOrder)
+    public function update(DeliveryOrderUpdateRequest $request, DeliveryOrder $deliveryOrder)
     {
-        $validated = $request->validate([
-            'purchase_order_id' => ['required', 'exists:purchase_orders,id'],
-            'do_number' => ['required', 'string', 'max:255', 'unique:delivery_orders,do_number,' . $deliveryOrder->id],
-            'delivery_date' => ['required', 'date'],
-            'delivery_file' => ['nullable', 'file', 'mimes:pdf,jpg,png', 'max:5120'],
-            'notes' => ['nullable', 'string'],
-        ]);
+        $validated = $request->validated();
 
         // Handle file replacement
         if ($request->hasFile('delivery_file')) {
