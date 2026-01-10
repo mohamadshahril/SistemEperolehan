@@ -19,6 +19,7 @@ class DeliveryReportController extends Controller
             'vendor_id' => $request->query('vendor_id'),
             'status' => $request->query('status'),
             'report_type' => $request->query('report_type', 'list'), // 'list', 'monthly', 'quarterly', 'yearly'
+            'selected_period' => $request->query('selected_period'),
             'sort_by' => $request->query('sort_by', 'delivery_date'),
             'sort_dir' => $request->query('sort_dir', 'desc'),
         ];
@@ -51,6 +52,21 @@ class DeliveryReportController extends Controller
                 : $query->where('is_received', false);
         }
 
+        // Apply selected period filter if coming from report drill-down
+        if ($filters['selected_period']) {
+            $period = $filters['selected_period'];
+            if ($filters['report_type'] === 'monthly') {
+                $query->whereRaw('DATE_FORMAT(delivery_date, "%Y-%m") = ?', [$period]);
+            } elseif ($filters['report_type'] === 'quarterly') {
+                if (preg_match('/^(\d{4})-Q(\d)$/', $period, $matches)) {
+                    $query->whereYear('delivery_date', $matches[1])
+                          ->whereRaw('QUARTER(delivery_date) = ?', [$matches[2]]);
+                }
+            } elseif ($filters['report_type'] === 'yearly') {
+                $query->whereYear('delivery_date', $period);
+            }
+        }
+
         // Sorting (only for list view)
         if (in_array($filters['sort_by'], ['delivery_date', 'do_number', 'is_received'])) {
             $query->orderBy($filters['sort_by'], $filters['sort_dir']);
@@ -66,13 +82,47 @@ class DeliveryReportController extends Controller
 
         $deliveryOrders = $query->paginate(25);
 
-        // Calculate stats
+        // Calculate stats based on filtered query (excluding pagination and selected_period for overall stats,
+        // but wait, if a period is selected, stats should reflect that period)
+        $statsQuery = DeliveryOrder::whereHas('purchaseOrder', function ($q) {
+                $q->whereNull('deleted_at');
+            });
+
+        if ($filters['from_date']) $statsQuery->whereDate('delivery_date', '>=', $filters['from_date']);
+        if ($filters['to_date']) $statsQuery->whereDate('delivery_date', '<=', $filters['to_date']);
+        if ($filters['vendor_id']) {
+            $statsQuery->whereHas('purchaseOrder', function ($q) use ($filters) {
+                $q->where('vendor_id', $filters['vendor_id']);
+            });
+        }
+        if ($filters['status'] !== null && $filters['status'] !== '') {
+            $filters['status'] === 'received'
+                ? $statsQuery->where('is_received', true)
+                : $statsQuery->where('is_received', false);
+        }
+        if ($filters['selected_period']) {
+            $period = $filters['selected_period'];
+            if ($filters['report_type'] === 'monthly') {
+                $statsQuery->whereRaw('DATE_FORMAT(delivery_date, "%Y-%m") = ?', [$period]);
+            } elseif ($filters['report_type'] === 'quarterly') {
+                if (preg_match('/^(\d{4})-Q(\d)$/', $period, $matches)) {
+                    $statsQuery->whereYear('delivery_date', $matches[1])
+                               ->whereRaw('QUARTER(delivery_date) = ?', [$matches[2]]);
+                }
+            } elseif ($filters['report_type'] === 'yearly') {
+                $statsQuery->whereYear('delivery_date', $period);
+            }
+        }
+
+        $totalCount = $statsQuery->count();
+        $receivedCount = $statsQuery->clone()->where('is_received', true)->count();
+
         $stats = [
-            'total' => DeliveryOrder::count(),
-            'received' => DeliveryOrder::where('is_received', true)->count(),
-            'pending' => DeliveryOrder::where('is_received', false)->count(),
-            'received_percentage' => DeliveryOrder::count() > 0 
-                ? round((DeliveryOrder::where('is_received', true)->count() / DeliveryOrder::count()) * 100, 1)
+            'total' => $totalCount,
+            'received' => $receivedCount,
+            'pending' => $totalCount - $receivedCount,
+            'received_percentage' => $totalCount > 0
+                ? round(($receivedCount / $totalCount) * 100, 1)
                 : 0,
         ];
 
@@ -124,7 +174,7 @@ class DeliveryReportController extends Controller
                 ->groupBy('period')
                 ->orderBy('period', 'desc')
                 ->get();
-            
+
             foreach ($data as $item) {
                 $results[] = [
                     'period' => $item->period,
@@ -141,7 +191,7 @@ class DeliveryReportController extends Controller
                 ->orderBy('year', 'desc')
                 ->orderBy('quarter', 'desc')
                 ->get();
-            
+
             foreach ($data as $item) {
                 $results[] = [
                     'period' => $item->year . '-Q' . $item->quarter,
@@ -157,7 +207,7 @@ class DeliveryReportController extends Controller
                 ->groupBy('year')
                 ->orderBy('year', 'desc')
                 ->get();
-            
+
             foreach ($data as $item) {
                 $results[] = [
                     'period' => (string)$item->year,
@@ -212,7 +262,7 @@ class DeliveryReportController extends Controller
         // Apply period filter if selected
         if ($filters['report_type'] !== 'list' && $filters['selected_period']) {
             $period = $filters['selected_period'];
-            
+
             if ($filters['report_type'] === 'monthly') {
                 // Filter by YYYY-MM format
                 $query->whereRaw('DATE_FORMAT(delivery_date, "%Y-%m") = ?', [$period]);
