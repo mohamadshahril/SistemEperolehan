@@ -59,6 +59,23 @@ class RbacSeeder extends Seeder
                 // Staff can create purchase requests by default
                 $permissionIdsByName['create purchase requests'] ?? null,
             ],
+            'Procurement Officer' => [
+                // Procurement related
+                $permissionIdsByName['view vendors'] ?? null,
+                $permissionIdsByName['manage vendors'] ?? null,
+                $permissionIdsByName['view purchase orders'] ?? null,
+                $permissionIdsByName['manage purchase orders'] ?? null,
+                $permissionIdsByName['print purchase orders'] ?? null,
+                $permissionIdsByName['view delivery orders'] ?? null,
+                $permissionIdsByName['manage delivery orders'] ?? null,
+                $permissionIdsByName['confirm delivery orders'] ?? null,
+                $permissionIdsByName['print delivery orders'] ?? null,
+                $permissionIdsByName['view tenders'] ?? null,
+                $permissionIdsByName['manage tenders'] ?? null,
+                $permissionIdsByName['award tenders'] ?? null,
+                $permissionIdsByName['view tender bids'] ?? null,
+                $permissionIdsByName['manage tender bids'] ?? null,
+            ],
         ];
 
         foreach ($roles as $roleName => $permIds) {
@@ -76,11 +93,21 @@ class RbacSeeder extends Seeder
             $role->permissions()->sync($permIds);
         }
 
-        // Attach Admin role to default admin user if exists
-        $admin = User::where('email', 'admin@example.com')->first();
-        $adminRole = Role::where('name', 'Admin')->first();
-        if ($admin && $adminRole) {
-            $admin->roles()->syncWithoutDetaching([$adminRole->id]);
+        // Attach Roles to specific users
+        $userRoleMappings = [
+            'admin@example.com' => 'Admin',
+            'manager@example.com' => 'Manager',
+            'staff@example.com' => 'Staff',
+            'procurement@example.com' => 'Procurement Officer',
+        ];
+
+        foreach ($userRoleMappings as $email => $roleName) {
+            $user = User::where('email', $email)->first();
+            $role = Role::where('name', $roleName)->first();
+
+            if ($user && $role) {
+                $user->roles()->syncWithoutDetaching([$role->id]);
+            }
         }
     }
 }
