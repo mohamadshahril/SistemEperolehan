@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\DB;
 
+
 /**
  * @extends \Illuminate\Database\Eloquent\Factories\Factory<\App\Models\User>
  */
@@ -36,8 +37,8 @@ class UserFactory extends Factory
         }
 
         return [
-            'name' => fake()->name(),
-            'email' => fake()->unique()->safeEmail(),
+            'name' => $this->faker->name(),
+            'email' => $this->faker->unique()->safeEmail(),
             'email_verified_at' => now(),
             'password' => static::$password ??= 'password',
             'remember_token' => Str::random(10),
@@ -79,15 +80,15 @@ class UserFactory extends Factory
      */
     protected function generateStaffId(): string
     {
-        $pattern = fake()->randomElement(['num', 'cnum', 'cnum_suf']);
+        $pattern = $this->faker->randomElement(['num', 'cnum', 'cnum_suf']);
         switch ($pattern) {
             case 'num':
-                return str_pad((string) fake()->numberBetween(0, 99999), 5, '0', STR_PAD_LEFT);
+                return str_pad((string) $this->faker->numberBetween(0, 99999), 5, '0', STR_PAD_LEFT);
             case 'cnum':
-                return 'c' . fake()->numberBetween(20000, 29999);
+                return 'c' . $this->faker->numberBetween(20000, 29999);
             case 'cnum_suf':
             default:
-                return 'c' . fake()->numberBetween(20000, 29999) . '_' . fake()->numberBetween(1, 9);
+                return 'c' . $this->faker->numberBetween(20000, 29999) . '_' . $this->faker->numberBetween(1, 9);
         }
     }
 
@@ -96,6 +97,6 @@ class UserFactory extends Factory
      */
     protected function generateIcNo(): string
     {
-        return (string) fake()->numerify('############');
+        return (string) $this->faker->numerify('############');
     }
 }
